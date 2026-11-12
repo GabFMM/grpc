@@ -1,6 +1,4 @@
-# Exemplo gRPC com Java
-
-Projeto de exemplo com um servidor e um cliente gRPC. O contrato entre eles está em `src/main/proto/hello.proto`.
+# gRPC com Java
 
 ## Requisitos
 
@@ -22,7 +20,7 @@ O `protobuf-maven-plugin` gera as classes Java a partir dos arquivos `.proto` e 
 Abra dois terminais na raiz do projeto. Inicie primeiro o servidor:
 
 ```bash
-mvn org.codehaus.mojo:exec-maven-plugin:3.5.0:java -Dexec.mainClass=com.facul.servidor.Main
+mvn org.codehaus.mojo:exec-maven-plugin:3.5.0:java -Dexec.mainClass=com.facul.noh.Main
 ```
 
 Em outro terminal, execute o cliente:

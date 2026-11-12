@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package noh;
+
+option java_package = "com.facul.noh";
+option java_multiple_files = true;
+
+message RequestVoteRequest {
+    int32 candidateId = 1;
+    int32 term = 2;
+    int32 lastLogIndex = 3;
+    int32 lastLogTerm = 4;
+}
+
+message RequestVoteResponse {
+    int32 term = 1;
+    bool voteGranted = 2;
+}
+
+service NohService {
+    rpc requestVote(RequestVoteRequest) returns (RequestVoteResponse);
+}
