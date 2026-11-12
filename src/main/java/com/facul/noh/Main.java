@@ -29,8 +29,8 @@ public class Main {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         Dotenv dotenv = Dotenv.load();
-        int id = Integer.parseInt(dotenv.get("NOH_" + args[0] + "ID"));
-        int porta = Integer.parseInt(dotenv.get("NOH_" + args[0] + "PORTA"));
+        int id = Integer.parseInt(dotenv.get("NOH_" + args[0] + "_ID"));
+        int porta = Integer.parseInt(dotenv.get("NOH_" + args[0] + "_PORTA"));
 
         iniciarServidor(porta);
 
