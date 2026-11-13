@@ -13,6 +13,7 @@ public class Noh {
     private final int id;
     private Estado estado;
     private int termo;
+    private int termoLog;
     private int indiceLog;
 
     // Duração em milissegundos
@@ -33,6 +34,7 @@ public class Noh {
     public Noh(int id) {
         this.id = id;
         estado = Estado.SEGUIDOR;
+        termo = 0;
         indiceLog = 0;
         calculaDuracaoTemporizador();
         votouId = null;
@@ -40,6 +42,14 @@ public class Noh {
 
     public int getId() {
         return id;
+    }
+
+    public int getTermo() {
+        return termo;
+    }
+
+    public int getTermoLog() {
+        return termoLog;
     }
 
     public int getIndiceLog() {
@@ -50,8 +60,17 @@ public class Noh {
         return duracaoTemporizador;
     }
 
+    public void virarLider() {
+        estado = Estado.LIDER;
+    }
+
     public void virarCandidato() {
         estado = Estado.CANDIDATO;
         termo++;
+    }
+
+    public void virarSeguidor(int novoTermo) {
+        estado = Estado.SEGUIDOR;
+        termo = novoTermo;
     }
 }
