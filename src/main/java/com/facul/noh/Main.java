@@ -104,5 +104,7 @@ public class Main {
         };
 
         escalonador.schedule(tarefa, noh.getDuracaoTemporizador(), TimeUnit.MILLISECONDS);
+
+        canais.values().forEach(ManagedChannel::shutdown);
     }
 }
