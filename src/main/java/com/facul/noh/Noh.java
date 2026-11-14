@@ -11,6 +11,8 @@ public class Noh {
     }
 
     private final int id;
+    private int liderId;
+    private int votouId;
     private Estado estado;
     private int termo;
     private int termoLog;
@@ -18,8 +20,6 @@ public class Noh {
 
     // Duração em milissegundos
     private int duracaoTemporizador;
-
-    private UUID votouId;
 
     private void calculaDuracaoTemporizador() {
         // Todo nó deve conter um temporizador único
@@ -33,15 +33,20 @@ public class Noh {
 
     public Noh(int id) {
         this.id = id;
+        liderId = -1;
+        votouId = -1;
         estado = Estado.SEGUIDOR;
         termo = 0;
         indiceLog = 0;
         calculaDuracaoTemporizador();
-        votouId = null;
     }
 
     public int getId() {
         return id;
+    }
+
+    public int getLiderId() {
+        return liderId;
     }
 
     public int getTermo() {

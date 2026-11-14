@@ -7,7 +7,7 @@ import java.sql.SQLException;
 
 public class LogRepository {
 
-    public void inserir(int indice, int termo, String comando) {
+    public void inserir(EntradaLog entrada) {
         String sql = """
             INSERT INTO log (indice, termo, comando)
             VALUES (?, ?, ?)
@@ -16,9 +16,9 @@ public class LogRepository {
         try (Connection conn = Database.conectar();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setInt(1, indice);
-            stmt.setInt(2, termo);
-            stmt.setString(3, comando);
+            stmt.setInt(1, entrada.indice());
+            stmt.setInt(2, entrada.termo());
+            stmt.setString(3, entrada.comando());
 
             stmt.executeUpdate();
 
