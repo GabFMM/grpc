@@ -3,6 +3,7 @@ package com.facul.cliente;
 import com.facul.api.ApiServiceGrpc;
 import com.google.protobuf.Empty;
 import io.grpc.ManagedChannel;
+import io.grpc.StatusRuntimeException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,14 +18,22 @@ public class Main {
         final int intervaloTentativas = 500; // em milissegundos
 
         for (int tentativa = 1; tentativa <= maxTentativas; tentativa++) {
-            for (ManagedChannel canal : canais.values()) {
-                ApiServiceGrpc.ApiServiceBlockingStub stub =
-                        ApiServiceGrpc.newBlockingStub(canal)
-                                .withDeadlineAfter(2, TimeUnit.SECONDS);
+            for (Map.Entry<Integer, ManagedChannel> entrada : canais.entrySet()) {
+                int nohId = entrada.getKey();
+                try {
+                    ApiServiceGrpc.ApiServiceBlockingStub stub =
+                            ApiServiceGrpc.newBlockingStub(entrada.getValue())
+                                    .withDeadlineAfter(2, TimeUnit.SECONDS);
 
-                int liderId = stub.obterLiderId(Empty.getDefaultInstance()).getLiderId();
-                if (liderId != -1) {
-                    return liderId;
+                    int liderId = stub.obterLiderId(Empty.getDefaultInstance()).getLiderId();
+                    if (liderId != -1) {
+                        return liderId;
+                    }
+                } catch (StatusRuntimeException e) {
+                    System.err.printf(
+                            "[AVISO] Nó (id %d) não respondeu (%s); tentando os demais nós.%n",
+                            nohId, e.getStatus().getCode()
+                    );
                 }
             }
 
@@ -47,8 +56,15 @@ public class Main {
                 new ArrayList<>(List.of(1, 2, 3, 4))
         );
 
-        int liderId = obterLiderId(canais);
+        try {
+            if (canais.isEmpty()) {
+                throw new IllegalStateException("[ERRO] Não há nós configurados para consultar.");
+            }
 
-        canais.values().forEach(ManagedChannel::shutdown);
+            int liderId = obterLiderId(canais);
+            System.out.println("ID do líder: " + liderId);
+        } finally {
+            canais.values().forEach(ManagedChannel::shutdown);
+        }
     }
 }
