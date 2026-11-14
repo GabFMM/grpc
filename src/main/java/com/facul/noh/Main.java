@@ -78,13 +78,19 @@ public class Main {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
+
+        // Preparativos
         final int quorum = 3;
         int numeroNoh = Integer.parseInt(args[0]);
         int id = getValorEnv("ID", numeroNoh);
         int porta = getValorEnv("PORTA", numeroNoh);
 
-        iniciarServidor(porta);
         Map<Integer, ManagedChannel> canais = criarCanais(id);
+
+        Database.inicializar();
+
+        // Inicializa o nó com segurança
+        iniciarServidor(porta);
 
         Noh noh = new Noh(id);
 
