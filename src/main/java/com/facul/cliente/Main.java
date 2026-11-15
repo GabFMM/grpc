@@ -1,11 +1,9 @@
 package com.facul.cliente;
 
-import com.facul.api.ApiServiceGrpc;
-import com.facul.api.RealizarGravacaoRequest;
-import com.facul.api.RealizarGravacaoResponse;
-import com.facul.api.ResultadoGravacao;
+import com.facul.api.*;
 import com.google.protobuf.Empty;
 import io.grpc.ManagedChannel;
+import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 
 import java.util.ArrayList;
@@ -14,6 +12,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
+import static com.facul.cliente.Constantes.*;
 import static com.facul.util.Util.criarCanais;
 
 public class Main {
@@ -45,25 +44,22 @@ public class Main {
     }
 
     private static void obterLiderId() throws InterruptedException {
-        final int maxTentativas = 10;
-        final int intervaloTentativas = 500; // em milissegundos
-
-        for (int tentativa = 1; tentativa <= maxTentativas; tentativa++) {
+        for (int tentativa = 1; tentativa <= MAX_TENTATIVAS.value; tentativa++) {
             if (atualizarLiderId()) {
                 return;
             }
 
-            if (tentativa < maxTentativas) {
+            if (tentativa < MAX_TENTATIVAS.value) {
                 System.out.printf(
                         "[INFO] Líder ainda desconhecido; nova tentativa em %d ms (%d/%d).%n",
-                        intervaloTentativas, tentativa, maxTentativas
+                        INTERVALO_TENTATIVAS_MS.value, tentativa, MAX_TENTATIVAS.value
                 );
-                Thread.sleep(intervaloTentativas);
+                Thread.sleep(INTERVALO_TENTATIVAS_MS.value);
             }
         }
 
         throw new IllegalStateException(
-                "[ERRO] Nenhum nó informou o líder após " + maxTentativas + " tentativas."
+                "[ERRO] Nenhum nó informou o líder após " + MAX_TENTATIVAS + " tentativas."
         );
     }
 
@@ -72,7 +68,7 @@ public class Main {
             try {
                 ApiServiceGrpc.ApiServiceBlockingStub stub =
                         ApiServiceGrpc.newBlockingStub(entrada.getValue())
-                                .withDeadlineAfter(2, TimeUnit.SECONDS);
+                                .withDeadlineAfter(DEADLINE_SEGUNDOS.value, TimeUnit.SECONDS);
 
                 int id = stub.obterLiderId(Empty.getDefaultInstance()).getLiderId();
                 if (id != -1 && canais.containsKey(id)) {
@@ -120,13 +116,12 @@ public class Main {
 
     private static boolean realizarGravacao(String gravacao) {
         final int maxRedirecionamentos = 5;
-        final int intervaloTentativas = 500;
 
         for (int tentativa = 0; tentativa < maxRedirecionamentos; tentativa++) {
             ManagedChannel canalLider = canais.get(liderId);
             if (canalLider == null) {
                 if (!atualizarLiderId()) {
-                    aguardarNovaTentativa(intervaloTentativas);
+                    aguardarNovaTentativa(INTERVALO_TENTATIVAS_MS.value);
                     continue;
                 }
                 canalLider = canais.get(liderId);
@@ -135,7 +130,7 @@ public class Main {
             try {
                 ApiServiceGrpc.ApiServiceBlockingStub stub =
                         ApiServiceGrpc.newBlockingStub(canalLider)
-                                .withDeadlineAfter(3, TimeUnit.SECONDS);
+                                .withDeadlineAfter(DEADLINE_SEGUNDOS.value, TimeUnit.SECONDS);
 
                 RealizarGravacaoResponse resposta = stub.realizarGravacao(
                         RealizarGravacaoRequest.newBuilder()
@@ -151,12 +146,12 @@ public class Main {
                         if (resposta.hasLiderId() && canais.containsKey(resposta.getLiderId())) {
                             liderId = resposta.getLiderId();
                         } else if (!atualizarLiderId()) {
-                            aguardarNovaTentativa(intervaloTentativas);
+                            aguardarNovaTentativa(INTERVALO_TENTATIVAS_MS.value);
                         }
                     }
                     case LIDER_DESCONHECIDO -> {
                         if (!atualizarLiderId()) {
-                            aguardarNovaTentativa(intervaloTentativas);
+                            aguardarNovaTentativa(INTERVALO_TENTATIVAS_MS.value);
                         }
                     }
                     case ERRO_GRAVACAO -> {
@@ -183,7 +178,59 @@ public class Main {
     }
 
     private static void mostrarTelaConsulta() {
+        mostrarNohs();
 
+        System.out.println("Digite o ID do nó a ser consultado:");
+        int id = lerInteiro();
+
+        ConsultarNohResponse response = consultarNoh(id);
+
+        if (response != null) {
+            System.out.println("Log:");
+            for (EntradaLog entrada : response.getEntradasList())
+                System.out.printf("- Indice: %d | Termo: %d | Comando: %s%n",
+                        entrada.getIndice(),
+                        entrada.getTermo(),
+                        entrada.getComando());
+        }
+
+        limparBuffer();
+
+        System.out.println("Digite qualquer tecla para voltar ao menu.");
+        scanner.nextLine();
+    }
+
+    private static void mostrarNohs() {
+        System.out.println("Lista de nós conhecidos identificados pelo ID:");
+
+        for (Integer id : canais.keySet())
+            if (id == liderId)
+                System.out.println("- " + id + " (líder)");
+            else
+                System.out.println("- " + id);
+    }
+
+    private static ConsultarNohResponse consultarNoh(int id) {
+        try {
+            ApiServiceGrpc.ApiServiceBlockingStub stub =
+                    ApiServiceGrpc.newBlockingStub(canais.get(id))
+                            .withDeadlineAfter(DEADLINE_SEGUNDOS.value, TimeUnit.SECONDS);
+
+            ConsultarNohRequest request = ConsultarNohRequest.newBuilder()
+                    .setNohId(id)
+                    .build();
+
+            return stub.consultarNoh(request);
+
+        } catch (StatusRuntimeException e) {
+            if (e.getStatus().getCode() == Status.Code.INTERNAL) {
+                System.out.println("O nó não conseguiu consultar o log.");
+            } else {
+                System.out.println("Não foi possível se comunicar com o nó.");
+            }
+
+            return null;
+        }
     }
 
     public static void main(String[] args) throws InterruptedException {

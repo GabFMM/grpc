@@ -1,6 +1,7 @@
 package com.facul.noh;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Random;
 
 public class Noh {
@@ -95,5 +96,9 @@ public class Noh {
         logRepository.inserir(new EntradaLog(novoIndice, termo, gravacao));
         ultimoIndiceLog = novoIndice;
         ultimoTermoLog = termo;
+    }
+
+    public List<EntradaLog> getEntradasLog() throws SQLException {
+        return logRepository.getEntradasLog();
     }
 }

@@ -1,10 +1,13 @@
 package com.facul.api;
 
+import com.facul.noh.EntradaLog;
 import com.facul.noh.Noh;
 import com.google.protobuf.Empty;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
 import java.sql.SQLException;
+import java.util.List;
 
 // Classe responsável por conter métodos implementados de comunicação entre cliente e um nó
 
@@ -50,14 +53,42 @@ public class ApiService extends ApiServiceGrpc.ApiServiceImplBase {
                     .build());
             responseObserver.onCompleted();
         } catch (SQLException e) {
-            System.err.printf("[ERRO] Falha ao gravar no banco do nó %d: %s%n",
-                    noh.getId(), e.getMessage());
-            e.printStackTrace(System.err);
+            System.err.printf("[ERRO] Falha ao gravar no banco do nó %d: %s%n", noh.getId(), e.getMessage());
 
             responseObserver.onNext(RealizarGravacaoResponse.newBuilder()
                     .setResultado(ResultadoGravacao.ERRO_GRAVACAO)
                     .build());
             responseObserver.onCompleted();
+        }
+    }
+
+    @Override
+    public void consultarNoh(ConsultarNohRequest request, StreamObserver<ConsultarNohResponse> responseObserver) {
+        try {
+            List<EntradaLog> entradas = noh.getEntradasLog();
+
+            ConsultarNohResponse.Builder response = ConsultarNohResponse.newBuilder();
+
+            for (com.facul.noh.EntradaLog entradaNoh : entradas) {
+                com.facul.api.EntradaLog entradaApi = com.facul.api.EntradaLog.newBuilder()
+                        .setIndice(entradaNoh.indice())
+                        .setTermo(entradaNoh.termo())
+                        .setComando(entradaNoh.comando())
+                        .build();
+
+                response.addEntradas(entradaApi);
+            }
+
+            responseObserver.onNext(response.build());
+            responseObserver.onCompleted();
+
+        } catch (SQLException e) {
+            System.err.printf("[ERRO] Falha ao consultar log no banco do nó %d: %s%n", noh.getId(), e.getMessage());
+
+            responseObserver.onError(Status.INTERNAL
+                    .withDescription("Falha ao consultar o log do nó")
+                    .withCause(e)
+                    .asRuntimeException());
         }
     }
 }

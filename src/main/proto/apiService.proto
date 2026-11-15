@@ -14,6 +14,12 @@ enum ResultadoGravacao {
     ERRO_GRAVACAO = 3;
 }
 
+message EntradaLog {
+    int32 indice = 1;
+    int32 termo = 2;
+    string comando = 3;
+}
+
 message ObterLiderIdResponse {
     int32 liderId = 1;
 }
@@ -27,7 +33,16 @@ message RealizarGravacaoResponse {
     optional int32 liderId = 2;
 }
 
+message ConsultarNohRequest {
+    int32 nohId = 1;
+}
+
+message ConsultarNohResponse {
+    repeated EntradaLog entradas = 1;
+}
+
 service ApiService {
     rpc obterLiderId(google.protobuf.Empty) returns (ObterLiderIdResponse);
     rpc realizarGravacao(RealizarGravacaoRequest) returns (RealizarGravacaoResponse);
+    rpc consultarNoh(ConsultarNohRequest) returns (ConsultarNohResponse);
 }

@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LogRepository {
 
@@ -30,7 +32,9 @@ public class LogRepository {
         }
     }
 
-    public void listar() {
+    public List<EntradaLog> getEntradasLog() throws SQLException {
+        List<EntradaLog> entradas = new ArrayList<>();
+
         String sql = "SELECT * FROM log ORDER BY indice";
 
         try (Connection conn = database.conectar();
@@ -42,13 +46,10 @@ public class LogRepository {
                 int termo = rs.getInt("termo");
                 String comando = rs.getString("comando");
 
-                System.out.println(
-                        indice + " | " + termo + " | " + comando
-                );
+                entradas.add(new EntradaLog(indice, termo, comando));
             }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
+
+        return entradas;
     }
 }
