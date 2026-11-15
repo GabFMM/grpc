@@ -1,7 +1,7 @@
 package com.facul.api;
 
-import com.facul.noh.EntradaLog;
-import com.facul.noh.Noh;
+import com.facul.noh.entity.EntradaLog;
+import com.facul.noh.entity.Noh;
 import com.google.protobuf.Empty;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -69,7 +69,7 @@ public class ApiService extends ApiServiceGrpc.ApiServiceImplBase {
 
             ConsultarNohResponse.Builder response = ConsultarNohResponse.newBuilder();
 
-            for (com.facul.noh.EntradaLog entradaNoh : entradas) {
+            for (EntradaLog entradaNoh : entradas) {
                 com.facul.api.EntradaLog entradaApi = com.facul.api.EntradaLog.newBuilder()
                         .setIndice(entradaNoh.indice())
                         .setTermo(entradaNoh.termo())

@@ -1,6 +1,7 @@
 package com.facul.noh;
 
 import com.facul.api.ApiService;
+import com.facul.noh.entity.Noh;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;

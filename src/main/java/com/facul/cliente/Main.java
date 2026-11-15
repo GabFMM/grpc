@@ -32,7 +32,6 @@ public class Main {
         }
     }
 
-
     private static void limparBuffer() {
         try {
             while (System.in.available() > 0) {

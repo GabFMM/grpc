@@ -1,4 +1,7 @@
-package com.facul.noh;
+package com.facul.noh.entity;
+
+import com.facul.noh.Database;
+import com.facul.noh.LogRepository;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -16,8 +19,9 @@ public class Noh {
     private int votouId;
     private Estado estado;
     private int termo;
-    private int ultimoTermoLog;
     private int ultimoIndiceLog;
+    private int ultimoTermoLog;
+    private int indiceCommit; // é menor ou igual ao ultimoIndiceLog
 
     // Duração em milissegundos
     private int duracaoTemporizador;
@@ -37,14 +41,18 @@ public class Noh {
     public Noh(int id) {
         this.id = id;
         liderId = -1;
-        votouId = -1;
         estado = Estado.SEGUIDOR;
-        termo = 0;
-        ultimoIndiceLog = 0;
         calculaDuracaoTemporizador();
 
         Database database = new Database(id);
         database.inicializar();
+
+        NohPersistente persistente = database.recuperarNohPersistente();
+        votouId = persistente.votouId();
+        termo = persistente.termo();
+        ultimoIndiceLog = persistente.ultimoIndiceLog();
+        ultimoTermoLog = persistente.ultimoTermoLog();
+
         logRepository = new LogRepository(database);
     }
 
@@ -92,10 +100,16 @@ public class Noh {
     }
 
     public void realizarGravacao(String gravacao) throws SQLException {
+        // Atualiza o próprio nó
         int novoIndice = ultimoIndiceLog + 1;
         logRepository.inserir(new EntradaLog(novoIndice, termo, gravacao));
         ultimoIndiceLog = novoIndice;
         ultimoTermoLog = termo;
+
+        // Atualiza os demais nós
+        if (estado == Estado.LIDER) {
+
+        }
     }
 
     public List<EntradaLog> getEntradasLog() throws SQLException {

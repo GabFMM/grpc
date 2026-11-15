@@ -1,4 +1,4 @@
-package com.facul.noh;
+package com.facul.noh.entity;
 
 public record EntradaLog (
         int indice,
