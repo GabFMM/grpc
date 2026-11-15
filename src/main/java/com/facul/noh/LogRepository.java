@@ -7,13 +7,19 @@ import java.sql.SQLException;
 
 public class LogRepository {
 
-    public void inserir(EntradaLog entrada) {
+    private final Database database;
+
+    public LogRepository(Database database) {
+        this.database = database;
+    }
+
+    public void inserir(EntradaLog entrada) throws SQLException {
         String sql = """
             INSERT INTO log (indice, termo, comando)
             VALUES (?, ?, ?)
         """;
 
-        try (Connection conn = Database.conectar();
+        try (Connection conn = database.conectar();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, entrada.indice());
@@ -21,16 +27,13 @@ public class LogRepository {
             stmt.setString(3, entrada.comando());
 
             stmt.executeUpdate();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
     }
 
     public void listar() {
         String sql = "SELECT * FROM log ORDER BY indice";
 
-        try (Connection conn = Database.conectar();
+        try (Connection conn = database.conectar();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
 

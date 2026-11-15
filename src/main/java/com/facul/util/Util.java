@@ -13,6 +13,7 @@ import java.util.Map;
 public class Util {
 
     // Perceba que nohsNum não é um array de ids
+    // Retorna um mapa que relaciona o id de um nó com seu canal
     public static Map<Integer, ManagedChannel> criarCanais(List<Integer> nohsNum) {
         Map<Integer, ManagedChannel> canais = new HashMap<>();
 

@@ -7,15 +7,19 @@ import java.sql.Statement;
 
 public class Database {
 
-    private static final String URL = "jdbc:h2:file:./data/raft";
-    private static final String USER = "sa";
-    private static final String PASSWORD = "";
+    private String url = "jdbc:h2:file:./data/raft";
 
-    public static Connection conectar() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASSWORD);
+    public Database(int nohId) {
+        this.url = "jdbc:h2:file:./data/raft-" + nohId;
     }
 
-    public static void inicializar() {
+    public Connection conectar() throws SQLException {
+        String user = "sa";
+        String password = "";
+        return DriverManager.getConnection(url, user, password);
+    }
+
+    public void inicializar() {
         String sql = """
             CREATE TABLE IF NOT EXISTS log (
                 indice INT PRIMARY KEY,
@@ -24,7 +28,7 @@ public class Database {
             )
         """;
 
-        try (Connection conn = Database.conectar();
+        try (Connection conn = conectar();
              Statement stmt = conn.createStatement()) {
 
             stmt.execute(sql);

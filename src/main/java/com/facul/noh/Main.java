@@ -1,15 +1,12 @@
 package com.facul.noh;
 
 import com.facul.api.ApiService;
-import io.github.cdimascio.dotenv.Dotenv;
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -60,8 +57,6 @@ public class Main {
 
         Map<Integer, ManagedChannel> canais = criarCanais(gerarNohNums(numeroNoh));
 
-        Database.inicializar();
-
         // Inicializa o nó com segurança
         Noh noh = new Noh(id);
         iniciarServidor(porta, noh);
@@ -84,8 +79,8 @@ public class Main {
                         .newBuilder()
                         .setCandidateId(noh.getId())
                         .setTermo(noh.getTermo())
-                        .setUltimoIndiceLog(noh.getIndiceLog())
-                        .setUltimoTermoLog(noh.getTermoLog())
+                        .setUltimoIndiceLog(noh.getUltimoIndiceLog())
+                        .setUltimoTermoLog(noh.getUltimoTermoLog())
                         .build();
 
                 RequestVoteResponse response = stub.requestVote(request);

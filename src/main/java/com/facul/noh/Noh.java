@@ -1,7 +1,7 @@
 package com.facul.noh;
 
+import java.sql.SQLException;
 import java.util.Random;
-import java.util.UUID;
 
 public class Noh {
     public enum Estado {
@@ -15,11 +15,13 @@ public class Noh {
     private int votouId;
     private Estado estado;
     private int termo;
-    private int termoLog;
-    private int indiceLog;
+    private int ultimoTermoLog;
+    private int ultimoIndiceLog;
 
     // Duração em milissegundos
     private int duracaoTemporizador;
+
+    private final LogRepository logRepository;
 
     private void calculaDuracaoTemporizador() {
         // Todo nó deve conter um temporizador único
@@ -37,8 +39,12 @@ public class Noh {
         votouId = -1;
         estado = Estado.SEGUIDOR;
         termo = 0;
-        indiceLog = 0;
+        ultimoIndiceLog = 0;
         calculaDuracaoTemporizador();
+
+        Database database = new Database(id);
+        database.inicializar();
+        logRepository = new LogRepository(database);
     }
 
     public int getId() {
@@ -49,16 +55,20 @@ public class Noh {
         return liderId;
     }
 
+    public Estado getEstado() {
+        return estado;
+    }
+
     public int getTermo() {
         return termo;
     }
 
-    public int getTermoLog() {
-        return termoLog;
+    public int getUltimoTermoLog() {
+        return ultimoTermoLog;
     }
 
-    public int getIndiceLog() {
-        return indiceLog;
+    public int getUltimoIndiceLog() {
+        return ultimoIndiceLog;
     }
 
     public int getDuracaoTemporizador() {
@@ -67,6 +77,7 @@ public class Noh {
 
     public void virarLider() {
         estado = Estado.LIDER;
+        liderId = id;
     }
 
     public void virarCandidato() {
@@ -77,5 +88,12 @@ public class Noh {
     public void virarSeguidor(int novoTermo) {
         estado = Estado.SEGUIDOR;
         termo = novoTermo;
+    }
+
+    public void realizarGravacao(String gravacao) throws SQLException {
+        int novoIndice = ultimoIndiceLog + 1;
+        logRepository.inserir(new EntradaLog(novoIndice, termo, gravacao));
+        ultimoIndiceLog = novoIndice;
+        ultimoTermoLog = termo;
     }
 }

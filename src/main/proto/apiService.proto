@@ -7,10 +7,27 @@ import "google/protobuf/empty.proto";
 option java_package = "com.facul.api";
 option java_multiple_files = true;
 
+enum ResultadoGravacao {
+    SUCESSO = 0;
+    REDIRECIONAR = 1;
+    LIDER_DESCONHECIDO = 2;
+    ERRO_GRAVACAO = 3;
+}
+
 message ObterLiderIdResponse {
     int32 liderId = 1;
 }
 
+message RealizarGravacaoRequest {
+    string gravacao = 1;
+}
+
+message RealizarGravacaoResponse {
+    ResultadoGravacao resultado = 1;
+    optional int32 liderId = 2;
+}
+
 service ApiService {
     rpc obterLiderId(google.protobuf.Empty) returns (ObterLiderIdResponse);
+    rpc realizarGravacao(RealizarGravacaoRequest) returns (RealizarGravacaoResponse);
 }
