@@ -13,7 +13,7 @@ public class NohRepository {
 
     public NohPersistente recuperarNohPersistente(int nohId) {
         String sqlNoh = """
-            SELECT termo, votouId
+            SELECT termo, votou_id
             FROM noh
             WHERE id = ?
         """;
@@ -37,7 +37,7 @@ public class NohRepository {
             try (ResultSet rs = prepStmt.executeQuery()) {
                 if (rs.next()) {
                     termo = rs.getInt("termo");
-                    votouId = rs.getInt("votouId");
+                    votouId = rs.getInt("votou_id");
                 }
             }
 
@@ -65,20 +65,25 @@ public class NohRepository {
         return null;
     }
 
-    // Apenas atualiza a tabela noh
+    /*
+    * Atualiza a tabela noh
+    * Todos os campos null, com exceção do id, do nohPersistente
+    * não devem mudar o valor correspondente no banco
+    * */
     public void persistirNoh(NohPersistente nohPersistente) throws SQLException {
         String sql = """
             UPDATE noh
-            SET votouId = ?, termo = ?
+            SET votou_id = COALESCE(?, votou_id),
+                termo = COALESCE(?, termo)
             WHERE id = ?
         """;
 
         try (Connection conn = database.conectar();
-            PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setInt(1, nohPersistente.votouId());
-            stmt.setInt(2, nohPersistente.termo());
-            stmt.setInt(3, nohPersistente.id());
+            stmt.setObject(1, nohPersistente.votouId());
+            stmt.setObject(2, nohPersistente.termo());
+            stmt.setObject(3, nohPersistente.id());
 
             stmt.executeUpdate();
         }

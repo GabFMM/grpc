@@ -1,6 +1,7 @@
 package com.facul.noh;
 
 import com.facul.noh.entity.Noh;
+import com.facul.noh.entity.NohPersistente;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
@@ -17,7 +18,7 @@ public class NohService extends NohServiceGrpc.NohServiceImplBase {
     @Override
     public synchronized void requestVote(RequestVoteRequest request, StreamObserver<RequestVoteResponse> responseObserver) {
         int termoAtualizado = Math.max(noh.getTermo(), request.getTermo());
-        int votoAtualizado = request.getTermo() > noh.getTermo()
+        int votouIdAtualizado = request.getTermo() > noh.getTermo()
                 ? -1
                 : noh.getVotouId();
 
@@ -27,16 +28,22 @@ public class NohService extends NohServiceGrpc.NohServiceImplBase {
                 request.getUltimoIndiceLog() >= noh.getUltimoIndiceLog());
 
         boolean concedeVoto = request.getTermo() == termoAtualizado
-                && (votoAtualizado == -1 || votoAtualizado == request.getCandidateId())
+                && (votouIdAtualizado == -1 || votouIdAtualizado == request.getCandidateId())
                 && logCandidatoAtualizado;
 
         if (concedeVoto) {
-            votoAtualizado = request.getCandidateId();
+            votouIdAtualizado = request.getCandidateId();
         }
 
         try {
-            if (termoAtualizado != noh.getTermo() || votoAtualizado != noh.getVotouId()) {
-                noh.atualizarTermoEVotoPersistidos(termoAtualizado, votoAtualizado);
+            if (termoAtualizado != noh.getTermo() || votouIdAtualizado != noh.getVotouId()) {
+                noh.persistirAtualizarNoh(new NohPersistente(
+                        noh.getId(),
+                        termoAtualizado,
+                        votouIdAtualizado,
+                        null,
+                        null
+                ));
             }
 
             RequestVoteResponse response = RequestVoteResponse.newBuilder()

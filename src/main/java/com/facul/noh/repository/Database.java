@@ -25,13 +25,13 @@ public class Database {
         String sqlNoh = """
             CREATE TABLE IF NOT EXISTS noh (
                 id INT PRIMARY KEY,
-                votouId INT,
+                votou_id INT,
                 termo INT NOT NULL
             )
         """;
 
         String sqlInsertNoh = """
-            INSERT INTO noh (id, votouId, termo)
+            INSERT INTO noh (id, votou_id, termo)
             SELECT ?, -1, 0
             WHERE NOT EXISTS (
                 SELECT 1 FROM noh WHERE id = ?

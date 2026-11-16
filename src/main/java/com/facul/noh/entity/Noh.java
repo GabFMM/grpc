@@ -21,10 +21,15 @@ public class Noh {
     }
 
     private final int id;
+    private Estado estado;
+
+    // Relacionados a eleição
     private int liderId; // -1 indica ausência
     private int votouId; // -1 indica ausência
-    private Estado estado;
     private int termo;
+    private int votosRecebidos;
+
+    // Relacionados ao log
     private int ultimoIndiceLog;
     private int ultimoTermoLog;
     private int indiceCommit; // é menor ou igual ao ultimoIndiceLog
@@ -61,8 +66,12 @@ public class Noh {
 
     public Noh(int num, int id) {
         this.id = id;
-        liderId = -1;
+
+        // Parametrização padrão
         estado = Estado.SEGUIDOR;
+        termo = 0;
+        votouId = -1;
+        votosRecebidos = 0;
         canais = criarCanais(gerarNohNums(num));
         calculaDuracaoTemporizador();
 
@@ -71,6 +80,7 @@ public class Noh {
         nohRepository = new NohRepository(database);
         database.inicializar();
 
+        // Recupera dados persistidos se houverem
         NohPersistente persistente = nohRepository.recuperarNohPersistente(id);
         votouId = persistente.votouId();
         termo = persistente.termo();
@@ -117,17 +127,37 @@ public class Noh {
     public void virarLider() {
         estado = Estado.LIDER;
         liderId = id;
+        votosRecebidos = 0;
     }
 
-    public void virarCandidato() {
+    public void virarCandidato() throws SQLException {
+        persistirAtualizarNoh(new NohPersistente(
+            id,
+            termo + 1,
+            id,
+            null,
+            null
+        ));
+
         estado = Estado.CANDIDATO;
         termo++;
+        liderId = -1;
+        votosRecebidos = 1; // Candidato vota em si próprio
     }
 
-    public void virarSeguidor(int novoTermo) {
+    public void virarSeguidor(int novoTermo) throws SQLException {
+        persistirAtualizarNoh(new NohPersistente(
+            id,
+            novoTermo,
+            novoTermo > termo ? -1 : null,
+            null,
+            null
+        ));
+
         estado = Estado.SEGUIDOR;
+        votouId = novoTermo > termo ? -1 : votouId;
         termo = novoTermo;
-        votouId = -1;
+        votosRecebidos = 0;
     }
 
     public void realizarGravacao(String gravacao) throws SQLException {
@@ -145,20 +175,26 @@ public class Noh {
         return logRepository.getEntradasLog();
     }
 
-    public void atualizarTermoEVotoPersistidos(int novoTermo, int novoVotouId) throws SQLException {
-        nohRepository.persistirNoh(new NohPersistente(
-                id,
-                novoTermo,
-                novoVotouId,
-                ultimoIndiceLog,
-                ultimoTermoLog
-        ));
+    /*
+    * Metodo responsável por persistir e atualizar em memória os novos dados
+    * Somente atualiza o nó em memória se a persistência ocorrer sem erros
+    * Mudanças nos dados que não são persistidos (ex: estado), não devem chamar esse metodo
+    * */
+    public void persistirAtualizarNoh(NohPersistente nohPersistente) throws SQLException {
+        // 1º persistência
+        nohRepository.persistirNoh(nohPersistente);
 
-        if (novoTermo > termo) {
-            estado = Estado.SEGUIDOR;
-            liderId = -1;
+        // 2º memória
+        if (nohPersistente.termo() != null) {
+            if (nohPersistente.termo() > termo) {
+                estado = Estado.SEGUIDOR;
+                liderId = -1;
+            }
+            termo = nohPersistente.termo();
         }
-        termo = novoTermo;
-        votouId = novoVotouId;
+        if (nohPersistente.votouId() != null) {
+            votouId = nohPersistente.votouId();
+        }
+
     }
 }

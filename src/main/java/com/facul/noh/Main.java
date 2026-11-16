@@ -7,6 +7,7 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -44,9 +45,19 @@ public class Main {
         ScheduledExecutorService escalonador = Executors.newScheduledThreadPool(1);
 
         Runnable tarefa = () -> {
-            noh.virarCandidato();
+            try {
+                noh.virarCandidato();
+            } catch (SQLException e) {
+                System.err.printf(
+                        "[ERRO] Nó, id %d, não conseguiu virar candidato: %s%n",
+                        noh.getId(),
+                        e.getMessage()
+                );
+                return;
+            }
 
-            int votosPositivos = 0;
+            // O candidato vota em si próprio
+            int votosPositivos = 1;
 
             // Notifica os demais nós sobre a candidatura
             for (ManagedChannel canal : noh.getCanais().values()) {
@@ -67,13 +78,32 @@ public class Main {
                     votosPositivos++;
                 }
                 else if (response.getTermo() > noh.getTermo()) {
-                    noh.virarSeguidor(response.getTermo());
+                    try {
+                        noh.virarSeguidor(response.getTermo());
+                    } catch (SQLException e) {
+                        System.err.printf(
+                                "[ERRO] Nó, id %d, não conseguiu virar seguidor: %s%n",
+                                noh.getId(),
+                                e.getMessage()
+                        );
+                        return;
+                    }
                     break;
                 }
             }
 
-            if (votosPositivos >= quorum)
-                noh.virarLider();
+            if (votosPositivos >= quorum) {
+                try {
+                    noh.virarLider();
+                } catch (SQLException e) {
+                    System.err.printf(
+                            "[ERRO] Nó, id %d, não conseguiu virar líder: %s%n",
+                            noh.getId(),
+                            e.getMessage()
+                    );
+                    return;
+                }
+            }
         };
 
         escalonador.schedule(tarefa, noh.getDuracaoTemporizador(), TimeUnit.MILLISECONDS);
