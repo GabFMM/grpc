@@ -5,16 +5,26 @@ import com.facul.noh.entity.Noh;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.StatusRuntimeException;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static com.facul.util.Util.getValorEnv;
+import static com.facul.util.Constantes.*;
 
 public class Main {
+    private static Noh noh;
+    private static final int quorum = 3;
+
+    private static final ScheduledExecutorService escalonador = Executors.newScheduledThreadPool(1);
+    private static final Runnable realizarEleicaoRunnable = Main::realizarEleicao;
+
     private static Server iniciarServidor(int porta, Noh noh) throws IOException {
         Server server = ServerBuilder
                 .forPort(porta)
@@ -28,41 +38,47 @@ public class Main {
         return server;
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    private static int sortearDuracaoTemporizador() {
+        // Todo nó deve conter um temporizador único
+        Random random = new Random();
 
-        // Preparativos
-        final int quorum = 3;
-        int numeroNoh = Integer.parseInt(args[0]);
-        int id = getValorEnv("ID", numeroNoh);
-        int porta = getValorEnv("PORTA", numeroNoh);
+        // 2 segundos
+        int tempoBase = 2000;
 
-        // Inicializa o nó com segurança
-        Noh noh = new Noh(numeroNoh, id);
-        Server server = iniciarServidor(porta, noh);
+        // até 4 segundos adicionais
+        int tempoAdicional = random.nextInt(4000);
 
-        // O nó deve esperar a notificação do líder,
-        // senão vira candidato
-        ScheduledExecutorService escalonador = Executors.newScheduledThreadPool(1);
+        // Duração será um valor entre 2 e 6 segundos
+        return tempoBase + tempoAdicional;
+    }
 
-        Runnable tarefa = () -> {
+    private static void realizarEleicao() {
+        try {
+            noh.virarCandidato();
+        } catch (SQLException e) {
+            System.err.printf(
+                    "[ERRO] Nó, id %d, não conseguiu virar candidato: %s%n",
+                    noh.getId(),
+                    e.getMessage()
+            );
+
+            escalonador.schedule(
+                    realizarEleicaoRunnable,
+                    sortearDuracaoTemporizador(),
+                    TimeUnit.MILLISECONDS
+            );
+            return;
+        }
+
+        // O candidato vota em si próprio
+        int votosPositivos = 1;
+
+        // Notifica os demais nós sobre a candidatura
+        for (Map.Entry<Integer, ManagedChannel> entrada : noh.getCanais().entrySet()) {
             try {
-                noh.virarCandidato();
-            } catch (SQLException e) {
-                System.err.printf(
-                        "[ERRO] Nó, id %d, não conseguiu virar candidato: %s%n",
-                        noh.getId(),
-                        e.getMessage()
-                );
-                return;
-            }
-
-            // O candidato vota em si próprio
-            int votosPositivos = 1;
-
-            // Notifica os demais nós sobre a candidatura
-            for (ManagedChannel canal : noh.getCanais().values()) {
                 NohServiceGrpc.NohServiceBlockingStub stub =
-                        NohServiceGrpc.newBlockingStub(canal);
+                        NohServiceGrpc.newBlockingStub(entrada.getValue())
+                                .withDeadlineAfter(DEADLINE_SEGUNDOS.value, TimeUnit.SECONDS);
 
                 RequestVoteRequest request = RequestVoteRequest
                         .newBuilder()
@@ -74,39 +90,65 @@ public class Main {
 
                 RequestVoteResponse response = stub.requestVote(request);
 
-                if (response.getVotou()) {
-                    votosPositivos++;
-                }
-                else if (response.getTermo() > noh.getTermo()) {
+                if (response.getTermo() > noh.getTermo()) {
                     try {
                         noh.virarSeguidor(response.getTermo());
-                    } catch (SQLException e) {
+                    }
+                    catch (SQLException e) {
                         System.err.printf(
                                 "[ERRO] Nó, id %d, não conseguiu virar seguidor: %s%n",
                                 noh.getId(),
                                 e.getMessage()
                         );
+
+                        escalonador.schedule(
+                                realizarEleicaoRunnable,
+                                noh.getDuracaoTemporizador(),
+                                TimeUnit.MILLISECONDS
+                        );
+
                         return;
                     }
+                    // Ao sair do loop, no fim do metodo, será agendada uma nova eleição
                     break;
                 }
-            }
 
-            if (votosPositivos >= quorum) {
-                try {
-                    noh.virarLider();
-                } catch (SQLException e) {
-                    System.err.printf(
-                            "[ERRO] Nó, id %d, não conseguiu virar líder: %s%n",
-                            noh.getId(),
-                            e.getMessage()
-                    );
-                    return;
+                if (response.getVotou()) {
+                    votosPositivos++;
                 }
-            }
-        };
 
-        escalonador.schedule(tarefa, noh.getDuracaoTemporizador(), TimeUnit.MILLISECONDS);
+            } catch (StatusRuntimeException e) {
+                System.err.printf(
+                        "[AVISO] Nó (id %d) não respondeu (%s) durante eleição; tentando os demais nós.%n",
+                        entrada.getKey(), e.getStatus().getCode()
+                );
+            }
+        }
+
+        if (noh.getEstado() == Noh.Estado.CANDIDATO && votosPositivos >= quorum) {
+            noh.virarLider();
+        }
+        else {
+            escalonador.schedule(
+                    realizarEleicaoRunnable,
+                    noh.getDuracaoTemporizador(),
+                    TimeUnit.MILLISECONDS
+            );
+        }
+    }
+
+    public static void main(String[] args) throws IOException, InterruptedException {
+
+        // Preparativos
+        int numeroNoh = Integer.parseInt(args[0]);
+        int id = getValorEnv("ID", numeroNoh);
+        int porta = getValorEnv("PORTA", numeroNoh);
+
+        // Inicializa o nó com segurança
+        noh = new Noh(numeroNoh, id);
+        Server server = iniciarServidor(porta, noh);
+
+        escalonador.schedule(realizarEleicaoRunnable, noh.getDuracaoTemporizador(), TimeUnit.MILLISECONDS);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Encerrando nó");

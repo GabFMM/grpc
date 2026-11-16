@@ -1,4 +1,4 @@
-package com.facul.cliente;
+package com.facul.util;
 
 public enum Constantes {
     MAX_TENTATIVAS(10),

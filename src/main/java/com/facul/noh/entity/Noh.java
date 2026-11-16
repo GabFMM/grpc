@@ -9,7 +9,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import static com.facul.util.Util.criarCanais;
 
@@ -36,21 +35,8 @@ public class Noh {
 
     Map<Integer, ManagedChannel> canais;
 
-    // Duração em milissegundos
-    private int duracaoTemporizador;
-
     private final LogRepository logRepository;
     private final NohRepository nohRepository;
-
-    private void calculaDuracaoTemporizador() {
-        // Todo nó deve conter um temporizador único
-        Random random = new Random();
-
-        int tempoBase = 2000; // 2 segundos
-        int tempoAdicional = random.nextInt(2000); // até 2 segundos adicionais
-
-        duracaoTemporizador = tempoBase + tempoAdicional;
-    }
 
     private List<Integer> gerarNohNums(int nohNumExcluido) {
         List<Integer> nohNums = new ArrayList<>();
@@ -73,7 +59,6 @@ public class Noh {
         votouId = -1;
         votosRecebidos = 0;
         canais = criarCanais(gerarNohNums(num));
-        calculaDuracaoTemporizador();
 
         Database database = new Database(id);
         logRepository = new LogRepository(database);
@@ -116,10 +101,6 @@ public class Noh {
         return ultimoIndiceLog;
     }
 
-    public int getDuracaoTemporizador() {
-        return duracaoTemporizador;
-    }
-
     public Map<Integer, ManagedChannel> getCanais() {
         return canais;
     }
@@ -140,7 +121,6 @@ public class Noh {
         ));
 
         estado = Estado.CANDIDATO;
-        termo++;
         liderId = -1;
         votosRecebidos = 1; // Candidato vota em si próprio
     }

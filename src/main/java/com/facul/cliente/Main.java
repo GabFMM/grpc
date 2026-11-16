@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
-import static com.facul.cliente.Constantes.*;
+import static com.facul.util.Constantes.*;
 import static com.facul.util.Util.criarCanais;
 
 public class Main {
