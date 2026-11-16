@@ -1,4 +1,4 @@
-package com.facul.noh;
+package com.facul.noh.repository;
 
 import com.facul.noh.entity.NohPersistente;
 
@@ -62,58 +62,4 @@ public class Database {
             System.err.println("[ERRO] Não foi possível inicializar o banco do nó: " + e.getMessage());
         }
     }
-
-    public NohPersistente recuperarNohPersistente() {
-        String sqlNoh = """
-            SELECT termo, votouId
-            FROM noh
-            WHERE id = ?
-        """;
-
-        String sqlLog = """
-            SELECT indice, termo
-            FROM log
-            ORDER by indice DESC
-            LIMIT 1    
-        """;
-
-        try (Connection conn = conectar();
-             Statement stmt = conn.createStatement();
-             PreparedStatement prepStmt = conn.prepareStatement(sqlNoh)) {
-
-            // Tabela noh
-            int termo = 0;
-            int votouId = -1;
-
-            prepStmt.setInt(1, nohId);
-            try (ResultSet rs = prepStmt.executeQuery()) {
-                if (rs.next()) {
-                    termo = rs.getInt("termo");
-                    votouId = rs.getInt("votouId");
-                }
-            }
-
-            // Tabela log
-            int ultimoIndiceLog = 0;
-            int ultimoTermoLog = 0;
-            try (ResultSet rs = stmt.executeQuery(sqlLog)) {
-                if (rs.next()) {
-                    ultimoIndiceLog = rs.getInt("indice");
-                    ultimoTermoLog = rs.getInt("termo");
-                }
-            }
-
-            return new NohPersistente(
-                termo,
-                votouId,
-                ultimoIndiceLog,
-                ultimoTermoLog
-            );
-        } catch (SQLException e) {
-            System.err.println("[ERRO] Persistência do nó não encontrado no banco: " + e.getMessage());
-        }
-
-        return null;
-    }
-
 }

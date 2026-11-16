@@ -19,4 +19,5 @@ message RequestVoteResponse {
 
 service NohService {
     rpc requestVote(RequestVoteRequest) returns (RequestVoteResponse);
+
 }

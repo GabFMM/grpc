@@ -7,45 +7,24 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.facul.util.Util.criarCanais;
 import static com.facul.util.Util.getValorEnv;
 
 public class Main {
-    private static List<Integer> gerarNohNums(int nohNumExcluido) {
-        List<Integer> nohNums = new ArrayList<>();
-
-        for (int i = 1; i <= 4; i++) {
-            if (i != nohNumExcluido) {
-                nohNums.add(i);
-            }
-        }
-
-        return nohNums;
-    }
-
-    private static void iniciarServidor(int porta, Noh noh) throws IOException, InterruptedException {
+    private static Server iniciarServidor(int porta, Noh noh) throws IOException {
         Server server = ServerBuilder
                 .forPort(porta)
-                .addService(new NohService())
+                .addService(new NohService(noh))
                 .addService(new ApiService(noh))
                 .build()
                 .start();
 
         System.out.println("Nó iniciado na porta " + porta);
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("Encerrando nó");
-            server.shutdown();
-        }));
-
-        server.awaitTermination();
+        return server;
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -56,11 +35,9 @@ public class Main {
         int id = getValorEnv("ID", numeroNoh);
         int porta = getValorEnv("PORTA", numeroNoh);
 
-        Map<Integer, ManagedChannel> canais = criarCanais(gerarNohNums(numeroNoh));
-
         // Inicializa o nó com segurança
-        Noh noh = new Noh(id);
-        iniciarServidor(porta, noh);
+        Noh noh = new Noh(numeroNoh, id);
+        Server server = iniciarServidor(porta, noh);
 
         // O nó deve esperar a notificação do líder,
         // senão vira candidato
@@ -72,7 +49,7 @@ public class Main {
             int votosPositivos = 0;
 
             // Notifica os demais nós sobre a candidatura
-            for (ManagedChannel canal : canais.values()) {
+            for (ManagedChannel canal : noh.getCanais().values()) {
                 NohServiceGrpc.NohServiceBlockingStub stub =
                         NohServiceGrpc.newBlockingStub(canal);
 
@@ -101,6 +78,20 @@ public class Main {
 
         escalonador.schedule(tarefa, noh.getDuracaoTemporizador(), TimeUnit.MILLISECONDS);
 
-        canais.values().forEach(ManagedChannel::shutdown);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("Encerrando nó");
+            escalonador.shutdownNow();
+            noh.getCanais().values().forEach(ManagedChannel::shutdown);
+            server.shutdown();
+        }));
+
+        try {
+            // O servidor fica aguardando enquanto o escalonador executa a eleição.
+            server.awaitTermination();
+        } finally {
+            escalonador.shutdownNow();
+            noh.getCanais().values().forEach(ManagedChannel::shutdown);
+            server.shutdown();
+        }
     }
 }

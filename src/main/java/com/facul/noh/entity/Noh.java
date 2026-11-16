@@ -1,11 +1,17 @@
 package com.facul.noh.entity;
 
-import com.facul.noh.Database;
-import com.facul.noh.LogRepository;
+import com.facul.noh.repository.Database;
+import com.facul.noh.repository.LogRepository;
+import com.facul.noh.repository.NohRepository;
+import io.grpc.ManagedChannel;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+
+import static com.facul.util.Util.criarCanais;
 
 public class Noh {
     public enum Estado {
@@ -15,18 +21,21 @@ public class Noh {
     }
 
     private final int id;
-    private int liderId;
-    private int votouId;
+    private int liderId; // -1 indica ausência
+    private int votouId; // -1 indica ausência
     private Estado estado;
     private int termo;
     private int ultimoIndiceLog;
     private int ultimoTermoLog;
     private int indiceCommit; // é menor ou igual ao ultimoIndiceLog
 
+    Map<Integer, ManagedChannel> canais;
+
     // Duração em milissegundos
     private int duracaoTemporizador;
 
     private final LogRepository logRepository;
+    private final NohRepository nohRepository;
 
     private void calculaDuracaoTemporizador() {
         // Todo nó deve conter um temporizador único
@@ -38,26 +47,43 @@ public class Noh {
         duracaoTemporizador = tempoBase + tempoAdicional;
     }
 
-    public Noh(int id) {
+    private List<Integer> gerarNohNums(int nohNumExcluido) {
+        List<Integer> nohNums = new ArrayList<>();
+
+        for (int i = 1; i <= 4; i++) {
+            if (i != nohNumExcluido) {
+                nohNums.add(i);
+            }
+        }
+
+        return nohNums;
+    }
+
+    public Noh(int num, int id) {
         this.id = id;
         liderId = -1;
         estado = Estado.SEGUIDOR;
+        canais = criarCanais(gerarNohNums(num));
         calculaDuracaoTemporizador();
 
         Database database = new Database(id);
+        logRepository = new LogRepository(database);
+        nohRepository = new NohRepository(database);
         database.inicializar();
 
-        NohPersistente persistente = database.recuperarNohPersistente();
+        NohPersistente persistente = nohRepository.recuperarNohPersistente(id);
         votouId = persistente.votouId();
         termo = persistente.termo();
         ultimoIndiceLog = persistente.ultimoIndiceLog();
         ultimoTermoLog = persistente.ultimoTermoLog();
-
-        logRepository = new LogRepository(database);
     }
 
     public int getId() {
         return id;
+    }
+
+    public int getVotouId() {
+        return votouId;
     }
 
     public int getLiderId() {
@@ -84,6 +110,10 @@ public class Noh {
         return duracaoTemporizador;
     }
 
+    public Map<Integer, ManagedChannel> getCanais() {
+        return canais;
+    }
+
     public void virarLider() {
         estado = Estado.LIDER;
         liderId = id;
@@ -97,6 +127,7 @@ public class Noh {
     public void virarSeguidor(int novoTermo) {
         estado = Estado.SEGUIDOR;
         termo = novoTermo;
+        votouId = -1;
     }
 
     public void realizarGravacao(String gravacao) throws SQLException {
@@ -106,13 +137,28 @@ public class Noh {
         ultimoIndiceLog = novoIndice;
         ultimoTermoLog = termo;
 
-        // Atualiza os demais nós
-        if (estado == Estado.LIDER) {
-
-        }
+        // Agora é seguro para avançar o índice do commit
+        // indiceCommit++;
     }
 
     public List<EntradaLog> getEntradasLog() throws SQLException {
         return logRepository.getEntradasLog();
+    }
+
+    public void atualizarTermoEVotoPersistidos(int novoTermo, int novoVotouId) throws SQLException {
+        nohRepository.persistirNoh(new NohPersistente(
+                id,
+                novoTermo,
+                novoVotouId,
+                ultimoIndiceLog,
+                ultimoTermoLog
+        ));
+
+        if (novoTermo > termo) {
+            estado = Estado.SEGUIDOR;
+            liderId = -1;
+        }
+        termo = novoTermo;
+        votouId = novoVotouId;
     }
 }

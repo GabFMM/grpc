@@ -1,4 +1,4 @@
-package com.facul.noh;
+package com.facul.noh.repository;
 
 import com.facul.noh.entity.EntradaLog;
 
