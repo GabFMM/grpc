@@ -103,7 +103,7 @@ public class Main {
 
                         escalonador.schedule(
                                 realizarEleicaoRunnable,
-                                noh.getDuracaoTemporizador(),
+                                sortearDuracaoTemporizador(),
                                 TimeUnit.MILLISECONDS
                         );
 
@@ -131,7 +131,7 @@ public class Main {
         else {
             escalonador.schedule(
                     realizarEleicaoRunnable,
-                    noh.getDuracaoTemporizador(),
+                    sortearDuracaoTemporizador(),
                     TimeUnit.MILLISECONDS
             );
         }
@@ -148,7 +148,7 @@ public class Main {
         noh = new Noh(numeroNoh, id);
         Server server = iniciarServidor(porta, noh);
 
-        escalonador.schedule(realizarEleicaoRunnable, noh.getDuracaoTemporizador(), TimeUnit.MILLISECONDS);
+        escalonador.schedule(realizarEleicaoRunnable, sortearDuracaoTemporizador(), TimeUnit.MILLISECONDS);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Encerrando nó");

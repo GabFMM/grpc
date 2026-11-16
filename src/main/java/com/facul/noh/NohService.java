@@ -66,4 +66,47 @@ public class NohService extends NohServiceGrpc.NohServiceImplBase {
                 .asRuntimeException());
         }
     }
+
+    @Override
+    public void fetch(FetchRequest request, StreamObserver<FetchResponse> responseObserver) {
+        // Caso 1: o termo do líder está desatualizado
+        if (request.getTermo() > noh.getTermo()) {
+            try {
+                noh.virarSeguidor(request.getTermo());
+                // faz coisas?
+
+            } catch (SQLException e) {
+                System.err.println(
+                        "[ERRO] Não foi possível atualizar o estado do nó para seguidor durante fetch: " +
+                                e.getMessage()
+                );
+
+                responseObserver.onError(Status.INTERNAL
+                        .withDescription("Falha ao atualizar estado do nó")
+                        .withCause(e)
+                        .asRuntimeException());
+            }
+        }
+        // Caso 2: o nó receptor não é líder
+        else if (noh.getEstado() != Noh.Estado.LIDER) {
+            int maiorTermo = Math.max(noh.getTermo(), request.getTermo());
+            int liderId = noh.getLiderId();
+
+            FetchRedirect.Builder redirectBuilder = FetchRedirect.newBuilder();
+            if (liderId != -1)
+                redirectBuilder.setLiderId(liderId);
+            redirectBuilder.setTermo(maiorTermo);
+
+            FetchResponse response = FetchResponse.newBuilder()
+                    .setRedirecionamento(redirectBuilder.build())
+                    .build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        }
+        // Caso 3: o no receptor é líder
+        else {
+            // faz coisas
+        }
+    }
 }
