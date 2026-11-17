@@ -3,6 +3,7 @@ syntax = "proto3";
 package api;
 
 import "google/protobuf/empty.proto";
+import "log.proto";
 
 option java_package = "com.facul.api";
 option java_multiple_files = true;
@@ -12,12 +13,6 @@ enum ResultadoGravacao {
     REDIRECIONAR = 1;
     LIDER_DESCONHECIDO = 2;
     ERRO_GRAVACAO = 3;
-}
-
-message EntradaLog {
-    int32 indice = 1;
-    int32 termo = 2;
-    string comando = 3;
 }
 
 message ObterLiderIdResponse {
@@ -38,7 +33,7 @@ message ConsultarNohRequest {
 }
 
 message ConsultarNohResponse {
-    repeated EntradaLog entradas = 1;
+    repeated .log.EntradaLog entradas = 1;
 }
 
 service ApiService {

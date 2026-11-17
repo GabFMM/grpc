@@ -16,7 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.facul.util.Util.getValorEnv;
+import static com.facul.util.ClienteNohUtil.getValorEnv;
 import static com.facul.util.Constantes.*;
 
 public class Main {

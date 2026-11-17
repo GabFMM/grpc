@@ -2,14 +2,10 @@ syntax = "proto3";
 
 package noh;
 
+import "log.proto";
+
 option java_package = "com.facul.noh";
 option java_multiple_files = true;
-
-message EntradaLog {
-    int32 indice = 1;
-    int32 termo = 2;
-    string comando = 3;
-}
 
 message RequestVoteRequest {
     int32 candidateId = 1;
@@ -38,9 +34,9 @@ message FetchRedirect {
 message FetchData {
     int32 termo = 1;
     int32 indiceCommit = 2;
-    repeated EntradaLog entradas = 3;
+    repeated .log.EntradaLog entradas = 3;
     bool prefixoValido = 4;
-    int32 truncarIndice = 5;
+    optional int32 truncarIndice = 5;
 }
 
 message FetchResponse {

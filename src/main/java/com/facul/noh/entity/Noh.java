@@ -9,8 +9,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-import static com.facul.util.Util.criarCanais;
+import static com.facul.util.ClienteNohUtil.criarCanais;
 
 public class Noh {
     private final int id;
@@ -78,6 +79,10 @@ public class Noh {
         return persistente.getUltimoIndiceLog();
     }
 
+    public int getIndiceCommit() {
+        return memoria.getIndiceCommit();
+    }
+
     public Map<Integer, ManagedChannel> getCanais() {
         return canais;
     }
@@ -128,6 +133,14 @@ public class Noh {
 
     public List<EntradaLog> getEntradasLog() throws SQLException {
         return logRepository.getEntradasLog();
+    }
+
+    public List<EntradaLog> getEntradasLogAPartirDe(int indiceInicial) throws SQLException {
+        return logRepository.getEntradasLogAPartirDe(indiceInicial);
+    }
+
+    public Optional<EntradaLog> getEntradaLogPorIndice(int indice) throws SQLException {
+        return logRepository.getEntradaLogPorIndice(indice);
     }
 
     /*

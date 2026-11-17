@@ -1,6 +1,7 @@
 package com.facul.cliente;
 
 import com.facul.api.*;
+import com.facul.proto.EntradaLog;
 import com.google.protobuf.Empty;
 import io.grpc.ManagedChannel;
 import io.grpc.Status;
@@ -13,7 +14,7 @@ import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 import static com.facul.util.Constantes.*;
-import static com.facul.util.Util.criarCanais;
+import static com.facul.util.ClienteNohUtil.criarCanais;
 
 public class Main {
     private static Map<Integer, ManagedChannel> canais = null;

@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Util {
+public class ClienteNohUtil {
 
     // Perceba que nohsNum não é um array de ids
     // Retorna um mapa que relaciona o id de um nó com seu canal

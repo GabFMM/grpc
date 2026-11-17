@@ -4,11 +4,14 @@ import com.facul.noh.entity.EntradaLog;
 import com.facul.noh.entity.Noh;
 import com.facul.noh.entity.Estado;
 import com.google.protobuf.Empty;
-import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
 import java.sql.SQLException;
 import java.util.List;
+
+import static com.facul.util.ServiceUtil.converterEntradasLogParaProto;
+
+import static com.facul.util.ServiceUtil.responderOnError;
 
 // Classe responsável por conter métodos implementados de comunicação entre cliente e um nó
 
@@ -70,26 +73,17 @@ public class ApiService extends ApiServiceGrpc.ApiServiceImplBase {
 
             ConsultarNohResponse.Builder response = ConsultarNohResponse.newBuilder();
 
-            for (EntradaLog entradaNoh : entradas) {
-                com.facul.api.EntradaLog entradaApi = com.facul.api.EntradaLog.newBuilder()
-                        .setIndice(entradaNoh.indice())
-                        .setTermo(entradaNoh.termo())
-                        .setComando(entradaNoh.comando())
-                        .build();
-
-                response.addEntradas(entradaApi);
-            }
+            response.addAllEntradas(converterEntradasLogParaProto(entradas));
 
             responseObserver.onNext(response.build());
             responseObserver.onCompleted();
 
         } catch (SQLException e) {
-            System.err.printf("[ERRO] Falha ao consultar log no banco do nó %d: %s%n", noh.getId(), e.getMessage());
-
-            responseObserver.onError(Status.INTERNAL
-                    .withDescription("Falha ao consultar o log do nó")
-                    .withCause(e)
-                    .asRuntimeException());
+            responderOnError(
+                    responseObserver,
+                    "[ERRO] Falha ao consultar o log do nó " + noh.getId(),
+                    e
+            );
         }
     }
 }
