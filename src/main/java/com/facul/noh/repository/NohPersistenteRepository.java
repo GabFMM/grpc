@@ -4,10 +4,10 @@ import com.facul.noh.entity.NohPersistente;
 
 import java.sql.*;
 
-public class NohRepository {
+public class NohPersistenteRepository {
     private final Database database;
 
-    public NohRepository(Database database) {
+    public NohPersistenteRepository(Database database) {
         this.database = database;
     }
 
@@ -81,8 +81,8 @@ public class NohRepository {
         try (Connection conn = database.conectar();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setObject(1, nohPersistente.votouId());
-            stmt.setObject(2, nohPersistente.termo());
+            stmt.setObject(1, nohPersistente.getVotouId());
+            stmt.setObject(2, nohPersistente.getTermo());
             stmt.setObject(3, nohPersistente.id());
 
             stmt.executeUpdate();

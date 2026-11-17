@@ -1,7 +1,5 @@
 package com.facul.noh.repository;
 
-import com.facul.noh.entity.NohPersistente;
-
 import java.sql.*;
 
 public class Database {

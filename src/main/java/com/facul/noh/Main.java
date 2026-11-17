@@ -2,6 +2,7 @@ package com.facul.noh;
 
 import com.facul.api.ApiService;
 import com.facul.noh.entity.Noh;
+import com.facul.noh.entity.Estado;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -125,7 +126,7 @@ public class Main {
             }
         }
 
-        if (noh.getEstado() == Noh.Estado.CANDIDATO && votosPositivos >= quorum) {
+        if (noh.getEstado() == Estado.CANDIDATO && votosPositivos >= quorum) {
             noh.virarLider();
         }
         else {

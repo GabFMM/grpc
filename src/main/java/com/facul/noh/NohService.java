@@ -2,6 +2,7 @@ package com.facul.noh;
 
 import com.facul.noh.entity.Noh;
 import com.facul.noh.entity.NohPersistente;
+import com.facul.noh.entity.Estado;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
@@ -88,7 +89,7 @@ public class NohService extends NohServiceGrpc.NohServiceImplBase {
             }
         }
         // Caso 2: o nó receptor não é líder
-        else if (noh.getEstado() != Noh.Estado.LIDER) {
+        else if (noh.getEstado() != Estado.LIDER) {
             int maiorTermo = Math.max(noh.getTermo(), request.getTermo());
             int liderId = noh.getLiderId();
 

@@ -2,7 +2,7 @@ package com.facul.noh.entity;
 
 import com.facul.noh.repository.Database;
 import com.facul.noh.repository.LogRepository;
-import com.facul.noh.repository.NohRepository;
+import com.facul.noh.repository.NohPersistenteRepository;
 import io.grpc.ManagedChannel;
 
 import java.sql.SQLException;
@@ -13,30 +13,14 @@ import java.util.Map;
 import static com.facul.util.Util.criarCanais;
 
 public class Noh {
-    public enum Estado {
-        CANDIDATO,
-        SEGUIDOR,
-        LIDER
-    }
-
     private final int id;
-    private Estado estado;
-
-    // Relacionados a eleição
-    private int liderId; // -1 indica ausência
-    private int votouId; // -1 indica ausência
-    private int termo;
-    private int votosRecebidos;
-
-    // Relacionados ao log
-    private int ultimoIndiceLog;
-    private int ultimoTermoLog;
-    private int indiceCommit; // é menor ou igual ao ultimoIndiceLog
+    private final NohMemoria memoria;
+    private final NohPersistente persistente;
 
     Map<Integer, ManagedChannel> canais;
 
     private final LogRepository logRepository;
-    private final NohRepository nohRepository;
+    private final NohPersistenteRepository nohPersistenteRepository;
 
     private List<Integer> gerarNohNums(int nohNumExcluido) {
         List<Integer> nohNums = new ArrayList<>();
@@ -54,23 +38,16 @@ public class Noh {
         this.id = id;
 
         // Parametrização padrão
-        estado = Estado.SEGUIDOR;
-        termo = 0;
-        votouId = -1;
-        votosRecebidos = 0;
+        memoria = new NohMemoria();
         canais = criarCanais(gerarNohNums(num));
 
         Database database = new Database(id);
         logRepository = new LogRepository(database);
-        nohRepository = new NohRepository(database);
+        nohPersistenteRepository = new NohPersistenteRepository(database);
         database.inicializar();
 
         // Recupera dados persistidos se houverem
-        NohPersistente persistente = nohRepository.recuperarNohPersistente(id);
-        votouId = persistente.votouId();
-        termo = persistente.termo();
-        ultimoIndiceLog = persistente.ultimoIndiceLog();
-        ultimoTermoLog = persistente.ultimoTermoLog();
+        persistente = nohPersistenteRepository.recuperarNohPersistente(id);
     }
 
     public int getId() {
@@ -78,27 +55,27 @@ public class Noh {
     }
 
     public int getVotouId() {
-        return votouId;
+        return persistente.getVotouId();
     }
 
     public int getLiderId() {
-        return liderId;
+        return memoria.getLiderId();
     }
 
     public Estado getEstado() {
-        return estado;
+        return memoria.getEstado();
     }
 
     public int getTermo() {
-        return termo;
+        return persistente.getTermo();
     }
 
     public int getUltimoTermoLog() {
-        return ultimoTermoLog;
+        return persistente.getUltimoTermoLog();
     }
 
     public int getUltimoIndiceLog() {
-        return ultimoIndiceLog;
+        return persistente.getUltimoIndiceLog();
     }
 
     public Map<Integer, ManagedChannel> getCanais() {
@@ -106,46 +83,44 @@ public class Noh {
     }
 
     public void virarLider() {
-        estado = Estado.LIDER;
-        liderId = id;
-        votosRecebidos = 0;
+        memoria.setEstado(Estado.LIDER);
+        memoria.setLiderId(id);
+        memoria.setVotosRecebidos(0);
     }
 
     public void virarCandidato() throws SQLException {
         persistirAtualizarNoh(new NohPersistente(
             id,
-            termo + 1,
+            persistente.getTermo() + 1,
             id,
             null,
             null
         ));
 
-        estado = Estado.CANDIDATO;
-        liderId = -1;
-        votosRecebidos = 1; // Candidato vota em si próprio
+        memoria.setEstado(Estado.CANDIDATO);
+        memoria.setLiderId(-1);
+        memoria.setVotosRecebidos(1); // Candidato vota em si próprio
     }
 
     public void virarSeguidor(int novoTermo) throws SQLException {
         persistirAtualizarNoh(new NohPersistente(
             id,
             novoTermo,
-            novoTermo > termo ? -1 : null,
+            novoTermo > persistente.getTermo() ? -1 : null,
             null,
             null
         ));
 
-        estado = Estado.SEGUIDOR;
-        votouId = novoTermo > termo ? -1 : votouId;
-        termo = novoTermo;
-        votosRecebidos = 0;
+        memoria.setEstado(Estado.SEGUIDOR);
+        memoria.setVotosRecebidos(0);
     }
 
     public void realizarGravacao(String gravacao) throws SQLException {
         // Atualiza o próprio nó
-        int novoIndice = ultimoIndiceLog + 1;
-        logRepository.inserir(new EntradaLog(novoIndice, termo, gravacao));
-        ultimoIndiceLog = novoIndice;
-        ultimoTermoLog = termo;
+        int novoIndice = persistente.getUltimoIndiceLog() + 1;
+        logRepository.inserir(new EntradaLog(novoIndice, persistente.getTermo(), gravacao));
+        persistente.setUltimoIndiceLog(novoIndice);
+        persistente.setUltimoTermoLog(persistente.getTermo());
 
         // Agora é seguro para avançar o índice do commit
         // indiceCommit++;
@@ -162,18 +137,18 @@ public class Noh {
     * */
     public void persistirAtualizarNoh(NohPersistente nohPersistente) throws SQLException {
         // 1º persistência
-        nohRepository.persistirNoh(nohPersistente);
+        nohPersistenteRepository.persistirNoh(nohPersistente);
 
         // 2º memória
-        if (nohPersistente.termo() != null) {
-            if (nohPersistente.termo() > termo) {
-                estado = Estado.SEGUIDOR;
-                liderId = -1;
+        if (nohPersistente.getTermo() != null) {
+            if (nohPersistente.getTermo() > persistente.getTermo()) {
+                memoria.setEstado(Estado.SEGUIDOR);
+                memoria.setLiderId(-1);
             }
-            termo = nohPersistente.termo();
+            persistente.setTermo(nohPersistente.getTermo());
         }
-        if (nohPersistente.votouId() != null) {
-            votouId = nohPersistente.votouId();
+        if (nohPersistente.getVotouId() != null) {
+            persistente.setVotouId(nohPersistente.getVotouId());
         }
 
     }

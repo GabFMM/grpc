@@ -2,6 +2,7 @@ package com.facul.api;
 
 import com.facul.noh.entity.EntradaLog;
 import com.facul.noh.entity.Noh;
+import com.facul.noh.entity.Estado;
 import com.google.protobuf.Empty;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -33,7 +34,7 @@ public class ApiService extends ApiServiceGrpc.ApiServiceImplBase {
 
     @Override
     public void realizarGravacao(RealizarGravacaoRequest request, StreamObserver<RealizarGravacaoResponse> responseObserver) {
-        if (noh.getEstado() != Noh.Estado.LIDER) {
+        if (noh.getEstado() != Estado.LIDER) {
             RealizarGravacaoResponse.Builder resposta = RealizarGravacaoResponse.newBuilder();
             if (noh.getLiderId() == -1) {
                 resposta.setResultado(ResultadoGravacao.LIDER_DESCONHECIDO);

@@ -76,7 +76,10 @@ Uma opção simples para este projeto é uma tabela `dados_comitados` com `indic
 ## Correspondência entre classes e tabelas
 
 - `NohPersistente` representa os campos persistidos da tabela `noh` e os metadados recuperados do último registro do log.
+- `NohMemoria` guarda o estado volátil do nó, como papel na eleição, líder conhecido, votos recebidos e índice de commit em execução.
+- `Estado` enumera os papéis possíveis do nó.
 - `EntradaLog` representa uma linha da tabela `log`.
-- `NohRepository` lê e atualiza a tabela `noh`.
+- `NohPersistenteRepository` lê e atualiza a tabela `noh`.
 - `LogRepository` insere e lista entradas da tabela `log`.
 - `Database` configura o arquivo H2 específico para o ID e cria as tabelas do nó.
+- `Noh` coordena os dados persistidos e voláteis junto às dependências do nó.
