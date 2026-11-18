@@ -13,6 +13,7 @@ enum ResultadoGravacao {
     REDIRECIONAR = 1;
     LIDER_DESCONHECIDO = 2;
     ERRO_GRAVACAO = 3;
+    SEM_QUORUM = 4;
 }
 
 message ObterLiderIdResponse {
@@ -30,10 +31,17 @@ message RealizarGravacaoResponse {
 
 message ConsultarNohRequest {
     int32 nohId = 1;
+    // false: somente dados comitados (leitura eventual consistente)
+    // true: log completo, incluindo entradas ainda não comitadas (depuração/testes)
+    bool incluirNaoComitados = 2;
 }
 
 message ConsultarNohResponse {
     repeated .log.EntradaLog entradas = 1;
+    int32 indiceCommit = 2;
+    int32 termo = 3;
+    string papel = 4;
+    int32 ultimoIndiceLog = 5;
 }
 
 service ApiService {

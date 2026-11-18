@@ -18,6 +18,34 @@ public class LogRepository {
         this.database = database;
     }
 
+    private static EntradaLog mapear(ResultSet rs) throws SQLException {
+        return new EntradaLog(rs.getInt("indice"), rs.getInt("termo"), rs.getString("comando"));
+    }
+
+    private List<EntradaLog> consultarLista(String sql, Integer parametro) throws SQLException {
+        List<EntradaLog> entradas = new ArrayList<>();
+
+        try (Connection conn = database.conectar();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            if (parametro != null) {
+                stmt.setInt(1, parametro);
+            }
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    entradas.add(mapear(rs));
+                }
+            }
+        }
+
+        return entradas;
+    }
+
+    // ------------------------------------------------------------------
+    // Log (inclui entradas ainda não comitadas)
+    // ------------------------------------------------------------------
+
     public void inserir(EntradaLog entrada) throws SQLException {
         String sql = """
             INSERT INTO log (indice, termo, comando)
@@ -36,81 +64,94 @@ public class LogRepository {
     }
 
     public List<EntradaLog> getEntradasLog() throws SQLException {
-        List<EntradaLog> entradas = new ArrayList<>();
-
-        String sql = "SELECT * FROM log ORDER BY indice";
-
-        try (Connection conn = database.conectar();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-
-            while (rs.next()) {
-                int indice = rs.getInt("indice");
-                int termo = rs.getInt("termo");
-                String comando = rs.getString("comando");
-
-                entradas.add(new EntradaLog(indice, termo, comando));
-            }
-        }
-
-        return entradas;
+        return consultarLista("SELECT indice, termo, comando FROM log ORDER BY indice", null);
     }
 
     /**
      * Retorna as entradas do log a partir do índice informado, incluindo esse índice.
      */
     public List<EntradaLog> getEntradasLogAPartirDe(int indiceInicial) throws SQLException {
-        List<EntradaLog> entradas = new ArrayList<>();
-
-        String sql = """
+        return consultarLista("""
             SELECT indice, termo, comando
             FROM log
             WHERE indice >= ?
+            ORDER BY indice
+        """, indiceInicial);
+    }
+
+    public Optional<EntradaLog> getEntradaLogPorIndice(int indice) throws SQLException {
+        List<EntradaLog> lista = consultarLista("""
+            SELECT indice, termo, comando
+            FROM log
+            WHERE indice = ?
+        """, indice);
+
+        return lista.isEmpty() ? Optional.empty() : Optional.of(lista.get(0));
+    }
+
+    public Optional<EntradaLog> getUltimaEntrada() throws SQLException {
+        List<EntradaLog> lista = consultarLista("""
+            SELECT indice, termo, comando
+            FROM log
+            ORDER BY indice DESC
+            LIMIT 1
+        """, null);
+
+        return lista.isEmpty() ? Optional.empty() : Optional.of(lista.get(0));
+    }
+
+    /**
+     * Remove a entrada do índice informado e todas as posteriores.
+     */
+    public void truncarAPartirDe(int indice) throws SQLException {
+        String sql = "DELETE FROM log WHERE indice >= ?";
+
+        try (Connection conn = database.conectar();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, indice);
+            stmt.executeUpdate();
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Banco final (somente dados comitados)
+    // ------------------------------------------------------------------
+
+    /**
+     * Copia do log para o banco final as entradas com indiceAnterior < indice <= novoIndice.
+     * É um único comando SQL, portanto atômico.
+     */
+    public void aplicarCommit(int indiceAnterior, int novoIndice) throws SQLException {
+        String sql = """
+            INSERT INTO dados (indice, termo, comando)
+            SELECT indice, termo, comando
+            FROM log
+            WHERE indice > ? AND indice <= ?
             ORDER BY indice
         """;
 
         try (Connection conn = database.conectar();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setInt(1, indiceInicial);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    entradas.add(new EntradaLog(
-                            rs.getInt("indice"),
-                            rs.getInt("termo"),
-                            rs.getString("comando")
-                    ));
-                }
-            }
+            stmt.setInt(1, indiceAnterior);
+            stmt.setInt(2, novoIndice);
+            stmt.executeUpdate();
         }
-
-        return entradas;
     }
 
-    public Optional<EntradaLog> getEntradaLogPorIndice(int indice) throws SQLException {
-        String sql = """
-            SELECT indice, termo, comando
-            FROM log
-            WHERE indice = ?
-        """;
+    public List<EntradaLog> getDadosComitados() throws SQLException {
+        return consultarLista("SELECT indice, termo, comando FROM dados ORDER BY indice", null);
+    }
+
+    public int getUltimoIndiceComitado() throws SQLException {
+        String sql = "SELECT COALESCE(MAX(indice), 0) AS maximo FROM dados";
 
         try (Connection conn = database.conectar();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
 
-            stmt.setInt(1, indice);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(new EntradaLog(
-                            rs.getInt("indice"),
-                            rs.getInt("termo"),
-                            rs.getString("comando")
-                    ));
-                }
-            }
+            return rs.next() ? rs.getInt("maximo") : 0;
         }
-
-        return Optional.empty();
     }
 }
