@@ -6,6 +6,23 @@ public class NohPersistente {
     private Integer votouId;
     private Integer ultimoIndiceLog;
     private Integer ultimoTermoLog;
+    private Integer indiceCommit;
+
+    public NohPersistente(
+            int id,
+            Integer termo,
+            Integer votouId,
+            Integer ultimoIndiceLog,
+            Integer ultimoTermoLog,
+            Integer indiceCommit
+    ) {
+        this.id = id;
+        this.termo = termo;
+        this.votouId = votouId;
+        this.ultimoIndiceLog = ultimoIndiceLog;
+        this.ultimoTermoLog = ultimoTermoLog;
+        this.indiceCommit = indiceCommit;
+    }
 
     public NohPersistente(
             int id,
@@ -14,11 +31,7 @@ public class NohPersistente {
             Integer ultimoIndiceLog,
             Integer ultimoTermoLog
     ) {
-        this.id = id;
-        this.termo = termo;
-        this.votouId = votouId;
-        this.ultimoIndiceLog = ultimoIndiceLog;
-        this.ultimoTermoLog = ultimoTermoLog;
+        this(id, termo, votouId, ultimoIndiceLog, ultimoTermoLog, null);
     }
 
     public int id() {
@@ -55,5 +68,13 @@ public class NohPersistente {
 
     public void setUltimoTermoLog(Integer ultimoTermoLog) {
         this.ultimoTermoLog = ultimoTermoLog;
+    }
+
+    public Integer getIndiceCommit() {
+        return indiceCommit;
+    }
+
+    public void setIndiceCommit(Integer indiceCommit) {
+        this.indiceCommit = indiceCommit;
     }
 }

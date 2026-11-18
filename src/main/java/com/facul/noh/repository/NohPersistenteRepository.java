@@ -13,7 +13,7 @@ public class NohPersistenteRepository {
 
     public NohPersistente recuperarNohPersistente(int nohId) {
         String sqlNoh = """
-            SELECT termo, votou_id
+            SELECT termo, votou_id, indice_commit
             FROM noh
             WHERE id = ?
         """;
@@ -32,12 +32,14 @@ public class NohPersistenteRepository {
             // Tabela noh
             int termo = 0;
             int votouId = -1;
+            int indiceCommit = 0;
 
             prepStmt.setInt(1, nohId);
             try (ResultSet rs = prepStmt.executeQuery()) {
                 if (rs.next()) {
                     termo = rs.getInt("termo");
                     votouId = rs.getInt("votou_id");
+                    indiceCommit = rs.getInt("indice_commit");
                 }
             }
 
@@ -56,7 +58,8 @@ public class NohPersistenteRepository {
                     termo,
                     votouId,
                     ultimoIndiceLog,
-                    ultimoTermoLog
+                    ultimoTermoLog,
+                    indiceCommit
             );
         } catch (SQLException e) {
             System.err.println("[ERRO] Persistência do nó não encontrado no banco: " + e.getMessage());
@@ -74,7 +77,8 @@ public class NohPersistenteRepository {
         String sql = """
             UPDATE noh
             SET votou_id = COALESCE(?, votou_id),
-                termo = COALESCE(?, termo)
+                termo = COALESCE(?, termo),
+                indice_commit = COALESCE(?, indice_commit)
             WHERE id = ?
         """;
 
@@ -83,7 +87,8 @@ public class NohPersistenteRepository {
 
             stmt.setObject(1, nohPersistente.getVotouId());
             stmt.setObject(2, nohPersistente.getTermo());
-            stmt.setObject(3, nohPersistente.id());
+            stmt.setObject(3, nohPersistente.getIndiceCommit());
+            stmt.setObject(4, nohPersistente.id());
 
             stmt.executeUpdate();
         }

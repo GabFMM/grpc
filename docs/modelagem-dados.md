@@ -32,10 +32,11 @@ Armazena o estado persistente de eleição do próprio nó. Cada arquivo contém
 | `id` | `INT`, chave primária | Identificador do nó dono desse banco. |
 | `termo` | `INT`, obrigatório | Termo atual conhecido pelo nó. |
 | `votou_id` | `INT`, obrigatório| ID do candidato que recebeu o voto do nó no termo atual; `-1` representa nenhum voto. |
+| `indice_commit` | `INT`, obrigatório | Maior índice do log local considerado comitado pelo nó. |
 
-O banco é inicializado com o ID do nó, termo `0` e `votou_id = -1`. O código usa `-1` como sentinela para “nenhum voto”. O termo e o voto são persistidos para que, após reiniciar, o nó não esqueça um termo mais recente nem vote duas vezes no mesmo termo.
+O banco é inicializado com o ID do nó, termo `0`, `votou_id = -1` e `indice_commit = 0`. O código usa `-1` como sentinela para “nenhum voto”. O termo, o voto e o índice de commit são persistidos para que o nó recupere esses dados após reiniciar.
 
-O estado (`SEGUIDOR`, `CANDIDATO` ou `LIDER`), o id do líder conhecido e a contagem de votos recebidos são estado de execução, não colunas da tabela.
+O estado (`SEGUIDOR`, `CANDIDATO` ou `LIDER`), o ID do líder conhecido e a contagem de votos recebidos são estado de execução, não colunas da tabela. `NohMemoria` mantém uma cópia em memória do índice de commit, mas a coluna `noh.indice_commit` é a fonte persistente.
 
 ## Tabela `log`
 
@@ -66,10 +67,7 @@ Assim, os quatro bancos têm cópias independentes do log, que podem estar tempo
 
 ## Estado que ainda precisa ser persistido
 
-O esquema atual persiste termo, voto e log. Para completar os requisitos de commit, o modelo ainda precisa persistir:
-
-- o índice de commit de cada nó, por exemplo com uma coluna `indice_commit` em `noh`;
-- o estado final comitado, em uma tabela própria ou em uma projeção materializada do log.
+O esquema persiste termo, voto, índice de commit e log. Ainda falta persistir o estado final comitado, em uma tabela própria ou em uma projeção materializada do log.
 
 Uma opção simples para este projeto é uma tabela `dados_comitados` com `indice` como chave primária e `termo` e `comando` da operação. A aplicação das entradas comitadas deve ser idempotente: ao receber um novo índice de commit, o nó aplica em ordem somente as entradas que ainda não foram aplicadas. A consulta ao cliente deve ler esse estado comitado, nunca todas as linhas de `log` indiscriminadamente.
 

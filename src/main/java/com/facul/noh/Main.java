@@ -244,7 +244,14 @@ public class Main {
                         return;
                     }
                 }
-                noh.setIndiceCommit(data.getIndiceCommit());
+                try {
+                    noh.setIndiceCommit(data.getIndiceCommit());
+                } catch (SQLException e) {
+                    System.err.printf(
+                            "[ERRO] Não foi possível persistir o índice de commit do nó %d: %s%n",
+                            noh.getId(), e.getMessage()
+                    );
+                }
             }
         }
         catch (StatusRuntimeException e) {

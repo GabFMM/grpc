@@ -147,6 +147,18 @@ public class NohService extends NohServiceGrpc.NohServiceImplBase {
             }
 
             if (prefixoValido) {
+                noh.atualizarIndiceCommitNoh(request.getSeguidorId(), request.getUltimoIndiceLog());
+                try {
+                    noh.setIndiceCommit(noh.obterMaiorIndiceCommitNoh());
+                } catch (SQLException e) {
+                    responderOnError(
+                            responseObserver,
+                            "[ERRO] Não foi possível persistir o novo índice de commit.",
+                            e
+                    );
+                    return;
+                }
+
                 fetchData.setPrefixoValido(true);
                 try {
                     fetchData.addAllEntradas(converterEntradasLogParaProto(
@@ -184,6 +196,7 @@ public class NohService extends NohServiceGrpc.NohServiceImplBase {
             }
 
             // Envia a resposta
+            fetchData.setIndiceCommit(noh.getIndiceCommit());
             FetchResponse response = FetchResponse.newBuilder()
                     .setTermo(noh.getTermo())
                     .setDados(fetchData.build())

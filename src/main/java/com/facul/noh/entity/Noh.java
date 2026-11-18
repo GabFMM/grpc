@@ -14,6 +14,8 @@ import java.util.Optional;
 import static com.facul.util.ClienteNohUtil.criarCanais;
 
 public class Noh {
+    private static final int QUORUM = 3;
+
     private final int id;
     private final NohMemoria memoria;
     private final NohPersistente persistente;
@@ -49,6 +51,7 @@ public class Noh {
 
         // Recupera dados persistidos se houverem
         persistente = nohPersistenteRepository.recuperarNohPersistente(id);
+        memoria.setIndiceCommit(persistente.getIndiceCommit());
     }
 
     public int getId() {
@@ -87,11 +90,37 @@ public class Noh {
         return memoria.getIndiceCommit();
     }
 
-    public void setIndiceCommit(int indiceCommit) {
-        if (memoria.getIndiceCommit() > indiceCommit)
+    public void setIndiceCommit(int indiceCommit) throws SQLException {
+        if (indiceCommit <= persistente.getIndiceCommit())
             return;
 
-        memoria.setIndiceCommit(indiceCommit);
+        if (indiceCommit > persistente.getUltimoIndiceLog()) {
+            throw new IllegalArgumentException(
+                    "O índice de commit não pode ultrapassar o último índice do log local"
+            );
+        }
+
+        persistirAtualizarNoh(new NohPersistente(
+                id,
+                null,
+                null,
+                null,
+                null,
+                indiceCommit
+        ));
+    }
+
+    public void atualizarIndiceCommitNoh(int nohId, int indiceCommit) {
+        memoria.adicionarIndiceCommitNoh(nohId, indiceCommit);
+
+
+    }
+
+    public int obterMaiorIndiceCommitNoh() {
+        return memoria.obterMaiorIndiceCommitNoh(
+                persistente.getUltimoIndiceLog(),
+                QUORUM
+        );
     }
 
     public Map<Integer, ManagedChannel> getCanais() {
@@ -106,9 +135,14 @@ public class Noh {
     }
 
     public void virarLider() {
+        memoria.limparIndicesReplicados();
         memoria.setEstado(Estado.LIDER);
         memoria.setLiderId(id);
         memoria.setVotosRecebidos(0);
+
+        // Após a eleição, quem tem o log mais atualizado é o lider
+        for (Integer id : canais.keySet())
+            memoria.adicionarIndiceCommitNoh(id, 0);
     }
 
     public void virarCandidato() throws SQLException {
@@ -229,6 +263,16 @@ public class Noh {
         }
         if (nohPersistente.getVotouId() != null) {
             persistente.setVotouId(nohPersistente.getVotouId());
+        }
+        if (nohPersistente.getUltimoIndiceLog() != null) {
+            persistente.setUltimoIndiceLog(nohPersistente.getUltimoIndiceLog());
+        }
+        if (nohPersistente.getUltimoTermoLog() != null) {
+            persistente.setUltimoTermoLog(nohPersistente.getUltimoTermoLog());
+        }
+        if (nohPersistente.getIndiceCommit() != null) {
+            persistente.setIndiceCommit(nohPersistente.getIndiceCommit());
+            memoria.setIndiceCommit(nohPersistente.getIndiceCommit());
         }
     }
 }
