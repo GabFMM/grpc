@@ -59,6 +59,10 @@ public class Noh {
         return persistente.getVotouId();
     }
 
+    public void setLiderId(int liderId) {
+        memoria.setLiderId(liderId);
+    }
+
     public int getLiderId() {
         return memoria.getLiderId();
     }
@@ -83,8 +87,22 @@ public class Noh {
         return memoria.getIndiceCommit();
     }
 
+    public void setIndiceCommit(int indiceCommit) {
+        if (memoria.getIndiceCommit() > indiceCommit)
+            return;
+
+        memoria.setIndiceCommit(indiceCommit);
+    }
+
     public Map<Integer, ManagedChannel> getCanais() {
         return canais;
+    }
+
+    public ManagedChannel getCanalLider() {
+        if (getLiderId() == -1)
+            return null;
+
+        return canais.get(getLiderId());
     }
 
     public void virarLider() {
@@ -103,7 +121,6 @@ public class Noh {
         ));
 
         memoria.setEstado(Estado.CANDIDATO);
-        memoria.setLiderId(-1);
         memoria.setVotosRecebidos(1); // Candidato vota em si próprio
     }
 
@@ -120,15 +137,65 @@ public class Noh {
         memoria.setVotosRecebidos(0);
     }
 
+    // Apenas seguidores chamam esse metodo
+    // Líderes chamam realizarGravacao
+    public void adicionarEntradaLog(EntradaLog entrada) throws SQLException {
+        if (getEstado() == Estado.LIDER)
+            return;
+
+        logRepository.inserir(entrada);
+
+        persistirAtualizarNoh(new NohPersistente(
+                id,
+                null,
+                null,
+                entrada.indice(),
+                entrada.termo()
+        ));
+    }
+
     public void realizarGravacao(String gravacao) throws SQLException {
+        // Somente líderes tem contato com o cliente,
+        // Logo somente eles podem começar uma gravação
+        if (memoria.getEstado() != Estado.LIDER)
+            return;
+
         // Atualiza o próprio nó
         int novoIndice = persistente.getUltimoIndiceLog() + 1;
-        logRepository.inserir(new EntradaLog(novoIndice, persistente.getTermo(), gravacao));
-        persistente.setUltimoIndiceLog(novoIndice);
-        persistente.setUltimoTermoLog(persistente.getTermo());
 
-        // Agora é seguro para avançar o índice do commit
-        // indiceCommit++;
+        logRepository.inserir(new EntradaLog(novoIndice, persistente.getTermo(), gravacao));
+
+        persistirAtualizarNoh(new NohPersistente(
+                id,
+                null,
+                null,
+                novoIndice,
+                persistente.getTermo()
+        ));
+    }
+
+    public void truncarEntradas(int indice) throws SQLException {
+        logRepository.truncarEntradas(indice);
+
+        Optional<EntradaLog> entrada = getEntradaLogPorIndice(indice - 1);
+        if (entrada.isPresent())
+            persistirAtualizarNoh(new NohPersistente(
+                    id,
+                    null,
+                    null,
+                    entrada.get().indice(),
+                    entrada.get().termo()
+                )
+            );
+        else
+            persistirAtualizarNoh(new NohPersistente(
+                    id,
+                    null,
+                    null,
+                    0,
+                    0
+                )
+            );
     }
 
     public List<EntradaLog> getEntradasLog() throws SQLException {
@@ -163,6 +230,5 @@ public class Noh {
         if (nohPersistente.getVotouId() != null) {
             persistente.setVotouId(nohPersistente.getVotouId());
         }
-
     }
 }

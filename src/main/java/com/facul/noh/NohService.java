@@ -69,17 +69,18 @@ public class NohService extends NohServiceGrpc.NohServiceImplBase {
 
     @Override
     public void fetch(FetchRequest request, StreamObserver<FetchResponse> responseObserver) {
-        // Caso 1: o termo do líder está desatualizado
+        // Caso 1: o termo do suposto líder está desatualizado
         if (request.getTermo() > noh.getTermo()) {
             try {
                 noh.virarSeguidor(request.getTermo());
 
                 // Cria um redirecionamento sem líder conhecido,
                 // Pois o lider virou seguidor, então acontecerá uma nova eleição
-                FetchRedirect.Builder redirectBuilder = FetchRedirect.newBuilder();
-                redirectBuilder.setTermo(request.getTermo());
+                FetchRedirect.Builder redirectBuilder = FetchRedirect.newBuilder()
+                        .setLiderId(-1);
 
                 FetchResponse response = FetchResponse.newBuilder()
+                        .setTermo(request.getTermo())
                         .setRedirecionamento(redirectBuilder.build())
                         .build();
 
@@ -99,12 +100,11 @@ public class NohService extends NohServiceGrpc.NohServiceImplBase {
             int maiorTermo = Math.max(noh.getTermo(), request.getTermo());
             int liderId = noh.getLiderId();
 
-            FetchRedirect.Builder redirectBuilder = FetchRedirect.newBuilder();
-            if (liderId != -1)
-                redirectBuilder.setLiderId(liderId);
-            redirectBuilder.setTermo(maiorTermo);
+            FetchRedirect.Builder redirectBuilder = FetchRedirect.newBuilder()
+                    .setLiderId(liderId);
 
             FetchResponse response = FetchResponse.newBuilder()
+                    .setTermo(maiorTermo)
                     .setRedirecionamento(redirectBuilder.build())
                     .build();
 
@@ -114,7 +114,6 @@ public class NohService extends NohServiceGrpc.NohServiceImplBase {
         // Caso 3: o no receptor é líder
         else {
             FetchData.Builder fetchData = FetchData.newBuilder()
-                    .setTermo(noh.getTermo())
                     .setIndiceCommit(noh.getIndiceCommit());
 
             int ultimoIndiceSeguidor = request.getUltimoIndiceLog();
@@ -186,6 +185,7 @@ public class NohService extends NohServiceGrpc.NohServiceImplBase {
 
             // Envia a resposta
             FetchResponse response = FetchResponse.newBuilder()
+                    .setTermo(noh.getTermo())
                     .setDados(fetchData.build())
                     .build();
 

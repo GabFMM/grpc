@@ -23,6 +23,20 @@ public class ServiceUtil {
         return entradasProto;
     }
 
+    public static List<EntradaLog> converterProtoParaEntradasLog(List<com.facul.proto.EntradaLog> entradasProto) {
+        List<EntradaLog> entradas = new ArrayList<>(entradasProto.size());
+
+        for (com.facul.proto.EntradaLog entrada : entradasProto) {
+            entradas.add(new EntradaLog(
+                    entrada.getIndice(),
+                    entrada.getTermo(),
+                    entrada.getComando()
+            ));
+        }
+
+        return entradas;
+    }
+
     public static <T> void responderOnError(
             StreamObserver<T> responseObserver,
             String mensagem,

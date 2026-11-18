@@ -18,6 +18,21 @@ public class LogRepository {
         this.database = database;
     }
 
+    public void truncarEntradas(int indice) throws SQLException {
+        String sql = """
+            DELETE FROM log
+            WHERE indice >= ?
+        """;
+
+        try (Connection conn = database.conectar();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, indice);
+
+            stmt.executeUpdate();
+        }
+    }
+
     public void inserir(EntradaLog entrada) throws SQLException {
         String sql = """
             INSERT INTO log (indice, termo, comando)

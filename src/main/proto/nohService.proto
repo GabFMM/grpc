@@ -27,12 +27,10 @@ message FetchRequest {
 }
 
 message FetchRedirect {
-    int32 termo = 1;
-    optional int32 liderId = 2;
+    int32 liderId = 2;
 }
 
 message FetchData {
-    int32 termo = 1;
     int32 indiceCommit = 2;
     repeated .log.EntradaLog entradas = 3;
     bool prefixoValido = 4;
@@ -40,9 +38,10 @@ message FetchData {
 }
 
 message FetchResponse {
+    int32 termo = 1;
     oneof resposta {
-        FetchRedirect redirecionamento = 1;
-        FetchData dados = 2;
+        FetchRedirect redirecionamento = 2;
+        FetchData dados = 3;
     }
 }
 
