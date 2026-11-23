@@ -1,16 +1,55 @@
-=== 16:28:09 iniciando nó 3 ===
-[ERRO] Não foi possível inicializar o banco do nó: Table "NOH" not found (this database is empty); SQL statement:
-    INSERT INTO noh (id, votou_id, termo, indice_commit)
-    SELECT ?, -1, 0, 0
-    WHERE NOT EXISTS (
-        SELECT 1 FROM noh WHERE id = ?
-    )
- [42104-240]
-[ERRO] Persistência do nó não encontrado no banco: Table "NOH" not found (this database is empty); SQL statement:
-    SELECT termo, votou_id, indice_commit
-    FROM noh
-    WHERE id = ?
- [42104-240]
-Exception in thread "main" java.lang.NullPointerException: Cannot invoke "com.facul.noh.entity.NohPersistente.getIndiceCommit()" because "this.persistente" is null
-	at com.facul.noh.entity.Noh.<init>(Noh.java:59)
-	at com.facul.noh.Main.main(Main.java:306)
+=== 17:27:17 iniciando nó 3 ===
+Nó iniciado na porta 50053
+17:27:20.580 [Nó 3] papel=SEGUIDOR | termo=0 | commit=0 | último índice do log=0 | líder=?
+[ELEIÇÃO] Nó 3 virou CANDIDATO no termo 1
+[VOTO] Nó 3 negou voto ao candidato 4 (termo 1)
+17:27:23.392 [Nó 3] papel=CANDIDATO | termo=1 | commit=0 | último índice do log=0 | líder=?
+17:27:23.592 [Nó 3] papel=SEGUIDOR | termo=1 | commit=0 | último índice do log=0 | líder=4
+[REPLICAÇÃO] Nó 3 recebeu entrada 1 (termo 1) 'C1-A' - NÃO comitada (commit=0)
+17:27:34.841 [Nó 3] papel=SEGUIDOR | termo=1 | commit=0 | último índice do log=1 | líder=4
+[COMMIT] Nó 3: índice de commit avançou para 1
+17:27:35.843 [Nó 3] papel=SEGUIDOR | termo=1 | commit=1 | último índice do log=1 | líder=4
+[REPLICAÇÃO] Nó 3 recebeu entrada 2 (termo 1) 'C1-B' - NÃO comitada (commit=1)
+17:27:43.058 [Nó 3] papel=SEGUIDOR | termo=1 | commit=1 | último índice do log=2 | líder=4
+[COMMIT] Nó 3: índice de commit avançou para 2
+17:27:43.659 [Nó 3] papel=SEGUIDOR | termo=1 | commit=2 | último índice do log=2 | líder=4
+17:27:52.286 [Nó 3] papel=SEGUIDOR | termo=1 | commit=2 | último índice do log=2 | líder=?
+[VOTO] Nó 3 concedeu voto ao candidato 1 (termo 2)
+17:27:53.501 [Nó 3] papel=SEGUIDOR | termo=2 | commit=2 | último índice do log=2 | líder=?
+17:27:53.902 [Nó 3] papel=SEGUIDOR | termo=2 | commit=2 | último índice do log=2 | líder=1
+[REPLICAÇÃO] Nó 3 recebeu entrada 3 (termo 2) 'C2-B' - NÃO comitada (commit=2)
+17:28:00.114 [Nó 3] papel=SEGUIDOR | termo=2 | commit=2 | último índice do log=3 | líder=1
+[COMMIT] Nó 3: índice de commit avançou para 3
+17:28:01.118 [Nó 3] papel=SEGUIDOR | termo=2 | commit=3 | último índice do log=3 | líder=1
+=== 17:28:11 nó 3 morto com kill -9 ===
+=== 17:28:25 iniciando nó 3 ===
+Nó iniciado na porta 50053
+17:28:27.009 [Nó 3] papel=SEGUIDOR | termo=2 | commit=3 | último índice do log=3 | líder=?
+[REPLICAÇÃO] Nó 3 recebeu entrada 4 (termo 2) 'C3-Y' - NÃO comitada (commit=3)
+[COMMIT] Nó 3: índice de commit avançou para 4
+17:28:27.210 [Nó 3] papel=SEGUIDOR | termo=2 | commit=4 | último índice do log=4 | líder=1
+[REPLICAÇÃO] Nó 3 recebeu entrada 5 (termo 2) 'C4A-1' - NÃO comitada (commit=4)
+17:28:38.036 [Nó 3] papel=SEGUIDOR | termo=2 | commit=4 | último índice do log=5 | líder=1
+[COMMIT] Nó 3: índice de commit avançou para 5
+17:28:39.038 [Nó 3] papel=SEGUIDOR | termo=2 | commit=5 | último índice do log=5 | líder=1
+[REPLICAÇÃO] Nó 3 recebeu entrada 6 (termo 2) 'C4A-2' - NÃO comitada (commit=5)
+17:28:40.640 [Nó 3] papel=SEGUIDOR | termo=2 | commit=5 | último índice do log=6 | líder=1
+[COMMIT] Nó 3: índice de commit avançou para 6
+17:28:41.041 [Nó 3] papel=SEGUIDOR | termo=2 | commit=6 | último índice do log=6 | líder=1
+17:29:02.079 [Nó 3] papel=SEGUIDOR | termo=2 | commit=6 | último índice do log=6 | líder=?
+[ELEIÇÃO] Nó 3 virou CANDIDATO no termo 3
+[AVISO] Nó (id 1) não respondeu (UNAVAILABLE) durante eleição; tentando os demais nós.
+[ELEIÇÃO] Nó 3 virou LÍDER no termo 3 com 3 votos
+17:29:04.682 [Nó 3] papel=LIDER | termo=3 | commit=6 | último índice do log=6 | líder=3 | réplicas ativas=0/3 (SEM QUÓRUM)
+17:29:04.882 [Nó 3] papel=LIDER | termo=3 | commit=6 | último índice do log=6 | líder=3 | réplicas ativas=2/3
+[LÍDER] Entrada 7 (termo 3) gravada no log local; aguardando quórum.
+17:29:11.902 [Nó 3] papel=LIDER | termo=3 | commit=6 | último índice do log=7 | líder=3 | réplicas ativas=2/3
+[COMMIT] Nó 3: índice de commit avançou para 7
+17:29:12.703 [Nó 3] papel=LIDER | termo=3 | commit=7 | último índice do log=7 | líder=3 | réplicas ativas=2/3
+17:29:14.912 [Nó 3] papel=LIDER | termo=3 | commit=7 | último índice do log=7 | líder=3 | réplicas ativas=3/3
+[LÍDER] Entrada 8 (termo 3) gravada no log local; aguardando quórum.
+17:29:32.348 [Nó 3] papel=LIDER | termo=3 | commit=7 | último índice do log=8 | líder=3 | réplicas ativas=3/3
+[GRAVAÇÃO] Entrada 8 não foi comitada a tempo; cliente não será confirmado.
+[COMMIT] Nó 3: índice de commit avançou para 8
+17:29:41.163 [Nó 3] papel=LIDER | termo=3 | commit=8 | último índice do log=8 | líder=3 | réplicas ativas=3/3
+[INFO] Encerrando nó

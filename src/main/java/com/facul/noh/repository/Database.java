@@ -20,7 +20,6 @@ public class Database {
         return DriverManager.getConnection(url, user, password);
     }
 
-
     public void inicializar() {
         String sqlNoh = """
             CREATE TABLE IF NOT EXISTS noh (
@@ -57,17 +56,18 @@ public class Database {
         """;
 
         try (Connection conn = conectar();
-             Statement stmt = conn.createStatement();
-             PreparedStatement prepStmt =
-                     conn.prepareStatement(sqlInsertNoh)) {
+             Statement stmt = conn.createStatement()) {
 
             stmt.execute(sqlNoh);
             stmt.execute(sqlLog);
             stmt.execute(sqlDados);
 
-            prepStmt.setInt(1, nohId);
-            prepStmt.setInt(2, nohId);
-            prepStmt.executeUpdate();
+            // Só prepara o INSERT depois que as tabelas foram criadas
+            try (PreparedStatement prepStmt = conn.prepareStatement(sqlInsertNoh)) {
+                prepStmt.setInt(1, nohId);
+                prepStmt.setInt(2, nohId);
+                prepStmt.executeUpdate();
+            }
 
         } catch (SQLException e) {
             System.err.println("[ERRO] Não foi possível inicializar o banco do nó: " + e.getMessage());

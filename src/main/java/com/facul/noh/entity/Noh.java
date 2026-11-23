@@ -56,6 +56,9 @@ public class Noh {
 
         // Recupera dados persistidos se houverem
         persistente = nohPersistenteRepository.recuperarNohPersistente(id);
+        if (persistente == null) {
+            throw new IllegalStateException("[ERRO] Não foi possível abrir/ler o banco do nó " + id + " (veja a mensagem acima)");
+        }
         memoria.setIndiceCommit(persistente.getIndiceCommit());
 
         // Garante que o banco final reflete o índice de commit persistido

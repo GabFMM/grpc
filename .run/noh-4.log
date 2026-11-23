@@ -1,16 +1,48 @@
-=== 16:28:09 iniciando nó 4 ===
-[ERRO] Não foi possível inicializar o banco do nó: Table "NOH" not found (this database is empty); SQL statement:
-    INSERT INTO noh (id, votou_id, termo, indice_commit)
-    SELECT ?, -1, 0, 0
-    WHERE NOT EXISTS (
-        SELECT 1 FROM noh WHERE id = ?
-    )
- [42104-240]
-[ERRO] Persistência do nó não encontrado no banco: Table "NOH" not found (this database is empty); SQL statement:
-    SELECT termo, votou_id, indice_commit
-    FROM noh
-    WHERE id = ?
- [42104-240]
-Exception in thread "main" java.lang.NullPointerException: Cannot invoke "com.facul.noh.entity.NohPersistente.getIndiceCommit()" because "this.persistente" is null
-	at com.facul.noh.entity.Noh.<init>(Noh.java:59)
-	at com.facul.noh.Main.main(Main.java:306)
+=== 17:27:17 iniciando nó 4 ===
+Nó iniciado na porta 50054
+17:27:20.832 [Nó 4] papel=SEGUIDOR | termo=0 | commit=0 | último índice do log=0 | líder=?
+[ELEIÇÃO] Nó 4 virou CANDIDATO no termo 1
+17:27:23.250 [Nó 4] papel=CANDIDATO | termo=1 | commit=0 | último índice do log=0 | líder=?
+[VOTO] Nó 4 negou voto ao candidato 3 (termo 1)
+[ELEIÇÃO] Nó 4 virou LÍDER no termo 1 com 3 votos
+17:27:23.451 [Nó 4] papel=LIDER | termo=1 | commit=0 | último índice do log=0 | líder=4 | réplicas ativas=3/3
+[LÍDER] Entrada 1 (termo 1) gravada no log local; aguardando quórum.
+17:27:34.297 [Nó 4] papel=LIDER | termo=1 | commit=0 | último índice do log=1 | líder=4 | réplicas ativas=3/3
+[COMMIT] Nó 4: índice de commit avançou para 1
+17:27:35.301 [Nó 4] papel=LIDER | termo=1 | commit=1 | último índice do log=1 | líder=4 | réplicas ativas=3/3
+[LÍDER] Entrada 2 (termo 1) gravada no log local; aguardando quórum.
+17:27:42.519 [Nó 4] papel=LIDER | termo=1 | commit=1 | último índice do log=2 | líder=4 | réplicas ativas=3/3
+[COMMIT] Nó 4: índice de commit avançou para 2
+17:27:43.120 [Nó 4] papel=LIDER | termo=1 | commit=2 | último índice do log=2 | líder=4 | réplicas ativas=3/3
+=== 17:27:51 nó 4 morto com kill -9 ===
+=== 17:28:01 iniciando nó 4 ===
+Nó iniciado na porta 50054
+17:28:03.131 [Nó 4] papel=SEGUIDOR | termo=1 | commit=2 | último índice do log=2 | líder=?
+[REPLICAÇÃO] Nó 4 recebeu entrada 3 (termo 2) 'C2-B' - NÃO comitada (commit=2)
+[COMMIT] Nó 4: índice de commit avançou para 3
+17:28:03.348 [Nó 4] papel=SEGUIDOR | termo=2 | commit=3 | último índice do log=3 | líder=1
+[REPLICAÇÃO] Nó 4 recebeu entrada 4 (termo 2) 'C3-Y' - NÃO comitada (commit=3)
+17:28:24.598 [Nó 4] papel=SEGUIDOR | termo=2 | commit=3 | último índice do log=4 | líder=1
+[COMMIT] Nó 4: índice de commit avançou para 4
+17:28:24.999 [Nó 4] papel=SEGUIDOR | termo=2 | commit=4 | último índice do log=4 | líder=1
+[REPLICAÇÃO] Nó 4 recebeu entrada 5 (termo 2) 'C4A-1' - NÃO comitada (commit=4)
+17:28:38.225 [Nó 4] papel=SEGUIDOR | termo=2 | commit=4 | último índice do log=5 | líder=1
+[COMMIT] Nó 4: índice de commit avançou para 5
+17:28:38.825 [Nó 4] papel=SEGUIDOR | termo=2 | commit=5 | último índice do log=5 | líder=1
+[REPLICAÇÃO] Nó 4 recebeu entrada 6 (termo 2) 'C4A-2' - NÃO comitada (commit=5)
+17:28:40.429 [Nó 4] papel=SEGUIDOR | termo=2 | commit=5 | último índice do log=6 | líder=1
+[COMMIT] Nó 4: índice de commit avançou para 6
+17:28:41.432 [Nó 4] papel=SEGUIDOR | termo=2 | commit=6 | último índice do log=6 | líder=1
+17:29:02.263 [Nó 4] papel=SEGUIDOR | termo=2 | commit=6 | último índice do log=6 | líder=?
+[VOTO] Nó 4 concedeu voto ao candidato 3 (termo 3)
+17:29:04.671 [Nó 4] papel=SEGUIDOR | termo=3 | commit=6 | último índice do log=6 | líder=?
+17:29:04.872 [Nó 4] papel=SEGUIDOR | termo=3 | commit=6 | último índice do log=6 | líder=3
+[REPLICAÇÃO] Nó 4 recebeu entrada 7 (termo 3) 'C4B-NOVA' - NÃO comitada (commit=6)
+17:29:12.079 [Nó 4] papel=SEGUIDOR | termo=3 | commit=6 | último índice do log=7 | líder=3
+[COMMIT] Nó 4: índice de commit avançou para 7
+17:29:13.080 [Nó 4] papel=SEGUIDOR | termo=3 | commit=7 | último índice do log=7 | líder=3
+[REPLICAÇÃO] Nó 4 recebeu entrada 8 (termo 3) 'C5-X1' - NÃO comitada (commit=7)
+17:29:32.514 [Nó 4] papel=SEGUIDOR | termo=3 | commit=7 | último índice do log=8 | líder=3
+[COMMIT] Nó 4: índice de commit avançou para 8
+17:29:41.335 [Nó 4] papel=SEGUIDOR | termo=3 | commit=8 | último índice do log=8 | líder=3
+[INFO] Encerrando nó
