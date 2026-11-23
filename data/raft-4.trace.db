@@ -1,0 +1,14 @@
+2026-11-23 16:28:11.346764-03:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "NOH" not found (this database is empty); SQL statement:
+    INSERT INTO noh (id, votou_id, termo, indice_commit)
+    SELECT ?, -1, 0, 0
+    WHERE NOT EXISTS (
+        SELECT 1 FROM noh WHERE id = ?
+    )
+ [42104-240]
+2026-11-23 16:28:11.363629-03:00 jdbc[4]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "NOH" not found (this database is empty); SQL statement:
+    SELECT termo, votou_id, indice_commit
+    FROM noh
+    WHERE id = ?
+ [42104-240]

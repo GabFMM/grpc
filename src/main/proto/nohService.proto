@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package noh;
+
+import "log.proto";
+
+option java_package = "com.facul.noh";
+option java_multiple_files = true;
+
+message RequestVoteRequest {
+    int32 candidateId = 1;
+    int32 termo = 2;
+    int32 ultimoTermoLog = 3;
+    int32 ultimoIndiceLog = 4;
+}
+
+message RequestVoteResponse {
+    int32 termo = 1;
+    bool votou = 2;
+}
+
+message FetchRequest {
+    int32 seguidorId = 1;
+    int32 termo = 2;
+    int32 ultimoIndiceLog = 3;
+    int32 ultimoTermoLog = 4;
+}
+
+message FetchRedirect {
+    int32 liderId = 2;
+}
+
+message FetchData {
+    int32 indiceCommit = 2;
+    repeated .log.EntradaLog entradas = 3;
+    bool prefixoValido = 4;
+    optional int32 truncarIndice = 5;
+}
+
+message FetchResponse {
+    int32 termo = 1;
+    oneof resposta {
+        FetchRedirect redirecionamento = 2;
+        FetchData dados = 3;
+    }
+}
+
+service NohService {
+    rpc requestVote(RequestVoteRequest) returns (RequestVoteResponse);
+    rpc fetch(FetchRequest) returns (FetchResponse);
+}

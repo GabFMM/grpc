@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package log;
+
+option java_package = "com.facul.proto";
+option java_multiple_files = true;
+
+message EntradaLog {
+    int32 indice = 1;
+    int32 termo = 2;
+    string comando = 3;
+}
